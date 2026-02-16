@@ -1,0 +1,20 @@
+[phases.build]
+cmds = [
+  "echo '🔧 Installing dependencies...'",
+  "npm ci",
+  "echo '🏗️ Building application...'", 
+  "npm run build",
+  "echo '📁 Checking build output...'",
+  "ls -la",
+  "ls -la dist/ || echo 'No dist directory'",
+  "ls -la dist/spa/ || echo 'No spa directory'",
+  "ls -la dist/server/ || echo 'No server directory'",
+  "echo '📄 Server files:'",
+  "find dist/server/ -name '*.mjs' || echo 'No .mjs files found'"
+]
+
+[phases.start]
+cmd = "npm start"
+
+[variables]
+NODE_ENV = "production"

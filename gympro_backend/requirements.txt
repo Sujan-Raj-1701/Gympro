@@ -1,0 +1,25 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+pymysql==1.1.0
+
+# Upgrade SQLAlchemy for Python 3.13 compatibility
+sqlalchemy==2.0.36
+
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Passlib 1.7.4 expects a bcrypt backend that accepts >72-byte inputs
+# (bcrypt truncates at 72 bytes by design). bcrypt 5.x raises ValueError instead.
+bcrypt<5
+
+python-multipart==0.0.6
+
+# Use a version with prebuilt wheels for Python 3.13
+pydantic==2.9.2
+
+mysql-connector-python==8.2.0
+cryptography==41.0.7
+pytz==2023.3
+python-dotenv==1.0.0
+
+razorpay==1.4.2

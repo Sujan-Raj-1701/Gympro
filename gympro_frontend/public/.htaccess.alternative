@@ -1,0 +1,20 @@
+# Alternative .htaccess for SPA routing (if main one doesn't work)
+# Copy this content to .htaccess if you're still getting 404 errors
+
+Options -MultiViews
+RewriteEngine On
+
+# Handle SPA routing - Method 1 (recommended)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteRule ^(.*)$ index.html [QSA,L]
+
+# If Method 1 doesn't work, try Method 2 (uncomment below and comment above)
+# RewriteCond %{HTTPS} off
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^(.*)$ /index.html [QSA,L]
+
+# If Method 2 doesn't work, try Method 3 (uncomment below and comment above)
+# FallbackResource /index.html
