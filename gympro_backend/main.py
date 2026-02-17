@@ -1057,7 +1057,7 @@ def _coerce_invoice_bulk(payload: dict) -> InvoiceBulkCreate:
                 pass
             # Attach employee/customer fields from header to first line only
             if idx == 0 and isinstance(hdr, dict):
-                for k in ['employee_id','employee_name','employee_level','employee_percent','customer_id','customer_name','customer_number','custumer_number','membership_id','membership_cardno','birthday_date','anniversary_date','address','additional_notes','notes','from_appointment','created_by','updated_by']:
+                for k in ['employee_id','employee_name','employee_level','employee_percent','customer_id','customer_name','customer_number','custumer_number','membership_id','membership_cardno','birthday_date','anniversary_date','address','additional_notes','notes','from_appointment','created_by','updated_by','age','height_cm','weight_kg']:
                     if hdr.get(k) is not None and ln.get(k) in (None, ''):
                         # Only fill from header when service-level value is absent
                         ln[k] = hdr.get(k)

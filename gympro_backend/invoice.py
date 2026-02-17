@@ -347,6 +347,30 @@ def _upsert_master_customer(
             if cand in mc_cols:
                 row[cand] = gender_norm
                 break
+    
+    # Physical stats enrichment
+    if 'age' in mc_cols:
+        age_in = first_line_dict.get('age')
+        if age_in is not None:
+            try:
+                row['age'] = int(age_in)
+            except Exception:
+                pass
+    if 'height_cm' in mc_cols:
+        h_in = first_line_dict.get('height_cm') or first_line_dict.get('height')
+        if h_in is not None:
+            try:
+                row['height_cm'] = float(h_in)
+            except Exception:
+                pass
+    if 'weight_kg' in mc_cols:
+        w_in = first_line_dict.get('weight_kg') or first_line_dict.get('weight')
+        if w_in is not None:
+            try:
+                row['weight_kg'] = float(w_in)
+            except Exception:
+                pass
+
     if 'updated_by' in mc_cols:
         row['updated_by'] = username
     if 'updated_at' in mc_cols:
@@ -1092,6 +1116,11 @@ class InvoiceLineCreate(BaseModel):
 
     # Additional notes to persist on billing_transactions header when column exists
     additional_notes: Optional[str] = None
+    
+    # New physical stats for enrollment
+    age: Optional[int] = Field(None, ge=5, le=100)
+    height_cm: Optional[float] = Field(None, ge=50, le=250)
+    weight_kg: Optional[float] = Field(None, ge=20, le=300)
 
 
 class InvoiceBulkCreate(BaseModel):

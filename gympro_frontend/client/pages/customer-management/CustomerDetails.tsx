@@ -100,12 +100,12 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
       }, {});
 
     const favoriteServices = Object.entries(services)
-      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 5)
       .map(([service]) => service);
 
     const preferredStaff = Object.entries(staff)
-      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 3)
       .map(([staffMember]) => staffMember);
 
@@ -141,7 +141,7 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
     try {
       return new Date(dateString).toLocaleDateString('en-IN', {
         year: 'numeric',
-        month: 'long', 
+        month: 'long',
         day: 'numeric'
       });
     } catch {
@@ -159,10 +159,10 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
         const birthDate = new Date(customer.date_of_birth);
         const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
         const nextYearBirthday = new Date(currentYear + 1, birthDate.getMonth(), birthDate.getDate());
-        
+
         const upcomingBirthday = thisYearBirthday >= now ? thisYearBirthday : nextYearBirthday;
         const daysUntilBirthday = Math.ceil((upcomingBirthday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         events.push({
           type: 'birthday',
           date: upcomingBirthday,
@@ -179,10 +179,10 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
         const anniversaryDate = new Date(customer.anniversary_date);
         const thisYearAnniversary = new Date(currentYear, anniversaryDate.getMonth(), anniversaryDate.getDate());
         const nextYearAnniversary = new Date(currentYear + 1, anniversaryDate.getMonth(), anniversaryDate.getDate());
-        
+
         const upcomingAnniversary = thisYearAnniversary >= now ? thisYearAnniversary : nextYearAnniversary;
         const daysUntilAnniversary = Math.ceil((upcomingAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         events.push({
           type: 'anniversary',
           date: upcomingAnniversary,
@@ -243,7 +243,7 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
                         </div>
                       </div>
                     )}
-                    
+
                     {getCustomerEmail() && (
                       <div className="flex items-center gap-3">
                         <Mail className="h-4 w-4 text-gray-400" />
@@ -386,9 +386,9 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
                           </div>
                         </div>
                         <Badge variant={event.daysUntil <= 7 ? "destructive" : "secondary"}>
-                          {event.daysUntil === 0 ? 'Today!' : 
-                           event.daysUntil === 1 ? 'Tomorrow' : 
-                           `${event.daysUntil} days`}
+                          {event.daysUntil === 0 ? 'Today!' :
+                            event.daysUntil === 1 ? 'Tomorrow' :
+                              `${event.daysUntil} days`}
                         </Badge>
                       </div>
                     ))}
@@ -434,7 +434,7 @@ export default function CustomerDetails({ customer, bookings, onClose }: Custome
                             </p>
                             <Badge variant={
                               booking.booking_status === 'completed' ? 'default' :
-                              booking.booking_status === 'cancelled' ? 'destructive' : 'secondary'
+                                booking.booking_status === 'cancelled' ? 'destructive' : 'secondary'
                             }>
                               {booking.booking_status || 'Unknown'}
                             </Badge>

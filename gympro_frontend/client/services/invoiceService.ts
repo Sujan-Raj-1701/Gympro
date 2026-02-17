@@ -26,6 +26,28 @@ export interface CreateInvoicePayload {
   employee_id?: string;
   invoice_id?: string; // optional client-supplied
   lines: InvoiceLineInput[];
+  // Combined service lines with full expanded details (qty=1 rows)
+  service_lines?: Array<{
+    service_id?: string;
+    service_name: string;
+    qty: number;
+    unit_price: number;
+    base_price?: number;
+    tax_id?: string | number;
+    tax_rate_percent?: number;
+    cgst_rate_percent?: number;
+    sgst_rate_percent?: number;
+    igst_rate_percent?: number;
+    total_cgst?: number;
+    total_sgst?: number;
+    total_igst?: number;
+    taxable_amount?: number;
+    tax_amount?: number;
+    discount_amount?: number;
+    grand_total?: number;
+    employee_id?: string | number;
+    employee_name?: string;
+  }>;
   // New arrays for packages and inventory items
   customer_lines?: Array<{
     account_code: string;
@@ -63,6 +85,8 @@ export interface CreateInvoicePayload {
     tax_amount?: number;
     discount_amount?: number;
     grand_total?: number;
+    employee_id?: string | number;
+    employee_name?: string;
     created_by?: string;
     updated_by?: string;
   }>;
@@ -85,9 +109,19 @@ export interface CreateInvoicePayload {
     tax_amount?: number;
     discount_amount?: number;
     grand_total?: number;
+    employee_id?: string | number;
+    employee_name?: string;
     created_by?: string;
     updated_by?: string;
   }>;
+  // Payment and status
+  payment_modes?: Array<{
+    payment_mode_id: string;
+    payment_mode_name: string;
+    amount: number;
+  }>;
+  credit_amount?: number;
+  invoice_status?: 'active' | 'hold' | 'settled' | 'cancelled';
 }
 
 export class InvoiceService {

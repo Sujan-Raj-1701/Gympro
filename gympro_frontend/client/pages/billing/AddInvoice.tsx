@@ -114,14 +114,14 @@ interface CustomerSuggestion {
   phone?: string;
   mobile?: string;
   customer_phone?: string;
-  id?: number|string;
-  customer_id?: number|string; // Business customer ID (preferred over primary key id)
+  id?: number | string;
+  customer_id?: number | string; // Business customer ID (preferred over primary key id)
   email?: string;
   total_visits?: number;
   last_visit?: string;
   customer_visitcnt?: number; // Visit count from database
   customer_credit?: number; // Customer credit amount from database
-  membership_id?: number|string; // For membership discount application
+  membership_id?: number | string; // For membership discount application
   membership_membership_name?: string; // Membership name from joined table
   membership_discount_percent?: number; // Discount percentage from joined table
   membership_membership_details?: string; // Additional membership details
@@ -288,12 +288,12 @@ export default function AddInvoice() {
   const fromAppt = searchParams.get('from_appt') === '1';
   const fromApptId = searchParams.get('appointment_id') || '';
   const isEditMode = !!editId;
-  
+
   // Debug logging removed
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   );
-  
+
   // Multiple customers state
   const [customers, setCustomers] = useState<{
     id: string;
@@ -309,6 +309,9 @@ export default function AddInvoice() {
     customerAddress: string;
     visitCount: string;
     creditPending: string;
+    customerAge: string;
+    customerHeight: string;
+    customerWeight: string;
   }[]>([
     {
       id: '1',
@@ -324,9 +327,12 @@ export default function AddInvoice() {
       customerAddress: "",
       visitCount: "0",
       creditPending: "0",
+      customerAge: "",
+      customerHeight: "",
+      customerWeight: "",
     }
   ]);
-  
+
   const [newInvoice, setNewInvoice] = useState({
     customer: "",
     customerName: "",
@@ -408,7 +414,7 @@ export default function AddInvoice() {
       } as any;
     });
   }, [fromAppt, searchParamsKey]);
-  
+
   // Customer membership data
   const [customerMembership, setCustomerMembership] = useState<MasterMembership | null>(null);
   // Control whether membership discount should auto-apply into the Discount field
@@ -500,12 +506,12 @@ export default function AddInvoice() {
     membershipDiscountAutoFilledRef.current = false;
   }, [applyMembershipDiscountToggle, customerMembership?.membership_id, customerMembership?.discount_percent, newInvoice.discountType, newInvoice.services]);
   const [taxExempted, setTaxExempted] = useState(false);
-  
+
   // Print confirmation dialog state
   const [showPrintConfirmation, setShowPrintConfirmation] = useState(false);
   const [invoiceDataForPrint, setInvoiceDataForPrint] = useState<any>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
-  
+
   // Global staff assignment state
   const [globalStaffId, setGlobalStaffId] = useState<string>('');
   const [globalStaffOpen, setGlobalStaffOpen] = useState(false);
@@ -525,8 +531,8 @@ export default function AddInvoice() {
       try {
         const res: any = await ApiService.get("/api/credits/balance");
         if (res && (res.balance !== undefined || res.data?.balance !== undefined)) {
-            const bal = res.balance !== undefined ? res.balance : res.data?.balance;
-            setProviderCredits(Number(bal));
+          const bal = res.balance !== undefined ? res.balance : res.data?.balance;
+          setProviderCredits(Number(bal));
         }
       } catch (e) {
         console.error("Failed to load provider credits", e);
@@ -582,10 +588,10 @@ export default function AddInvoice() {
       return;
     }
 
-    const membership = masterMemberships.find(m => 
+    const membership = masterMemberships.find(m =>
       m.membership_id == membershipId || m.id == membershipId
     );
-    
+
     if (membership) {
       setCustomerMembership(membership);
     } else {
@@ -869,7 +875,7 @@ export default function AddInvoice() {
           ApiService.post('/read', { tables: ['master_category'], account_code: acc, retail_code: ret }),
           ApiService.post('/read', { tables: ['master_hsn'], account_code: acc, retail_code: ret }),
         ]);
-        consolidated = { data: { ...((taxR as any)?.data||{}), ...((payR as any)?.data||{}), ...((servR as any)?.data||{}), ...((packR as any)?.data||{}), ...((empR as any)?.data||{}), ...((memR as any)?.data||{}), ...((custR as any)?.data||{}), ...((catR as any)?.data||{}), ...((hsnR as any)?.data||{}) } };
+        consolidated = { data: { ...((taxR as any)?.data || {}), ...((payR as any)?.data || {}), ...((servR as any)?.data || {}), ...((packR as any)?.data || {}), ...((empR as any)?.data || {}), ...((memR as any)?.data || {}), ...((custR as any)?.data || {}), ...((catR as any)?.data || {}), ...((hsnR as any)?.data || {}) } };
       }
       const dataRoot: any = (consolidated as any)?.data ?? {};
 
@@ -916,31 +922,31 @@ export default function AddInvoice() {
       }
 
       // Taxes
-      const taxRows: MasterTax[] = extract('master_tax', ['tax_master','taxes','tax']);
+      const taxRows: MasterTax[] = extract('master_tax', ['tax_master', 'taxes', 'tax']);
       if (taxRows.length) {
-        const activeTaxes = taxRows.filter(t=> t && (t.status==null || t.status===1));
+        const activeTaxes = taxRows.filter(t => t && (t.status == null || t.status === 1));
         setMasterTaxes(activeTaxes);
         const defaultTax = activeTaxes[0];
         if (defaultTax) {
-          const totalTax = (Number(defaultTax.cgst)||0) + (Number(defaultTax.sgst)||0) + (Number(defaultTax.igst)||0);
+          const totalTax = (Number(defaultTax.cgst) || 0) + (Number(defaultTax.sgst) || 0) + (Number(defaultTax.igst) || 0);
           setNewInvoice(prev => ({ ...prev, tax: totalTax, taxId: String(defaultTax.id) }));
         }
       }
 
       // Payment Modes
-      const payRows: MasterPaymentMode[] = extract('master_paymentmodes', ['master_payment_mode','payment_modes','payment_mode_master','paymodes','paymentmodes']);
+      const payRows: MasterPaymentMode[] = extract('master_paymentmodes', ['master_payment_mode', 'payment_modes', 'payment_mode_master', 'paymodes', 'paymentmodes']);
       if (payRows.length) {
-        const activePayments = payRows.filter(p=> p && (p.status==null || p.status===1));
+        const activePayments = payRows.filter(p => p && (p.status == null || p.status === 1));
         setMasterPaymentModes(activePayments);
-        const defaultPayment = activePayments.find(p=> (p.payment_mode_name||'').toLowerCase()==='cash') || activePayments[0];
+        const defaultPayment = activePayments.find(p => (p.payment_mode_name || '').toLowerCase() === 'cash') || activePayments[0];
         if (defaultPayment) {
-          setNewInvoice(prev => ({ ...prev, paymentMethod: (defaultPayment.payment_mode_name||'').toLowerCase(), paymentModeId: String(defaultPayment.id) }));
+          setNewInvoice(prev => ({ ...prev, paymentMethod: (defaultPayment.payment_mode_name || '').toLowerCase(), paymentModeId: String(defaultPayment.id) }));
         }
       }
 
       // Services
-      const serviceRows: MasterService[] = extract('master_service', ['services','service_master']);
-      const activeServices = serviceRows.length ? serviceRows.filter(s=> s && (s.status==null || s.status===1)) : [];
+      const serviceRows: MasterService[] = extract('master_service', ['services', 'service_master']);
+      const activeServices = serviceRows.length ? serviceRows.filter(s => s && (s.status == null || s.status === 1)) : [];
       const normalizedServices: MasterService[] = activeServices.map((s: any) => ({
         ...s,
         price: Number(s?.price ?? 0),
@@ -950,28 +956,28 @@ export default function AddInvoice() {
       setMasterServices(normalizedServices);
 
       // Packages
-      const packageRows: MasterPackage[] = extract('master_package', ['packages','package_master']);
+      const packageRows: MasterPackage[] = extract('master_package', ['packages', 'package_master']);
       if (packageRows.length) {
-        const activePackages = packageRows.filter(p=> p && (p.status==null || p.status===1));
+        const activePackages = packageRows.filter(p => p && (p.status == null || p.status === 1));
         // Normalize tax id shape: prefer tax_id, fallback to taxid/taxId
-        const normalizedPackages: MasterPackage[] = activePackages.map((p:any) => ({
+        const normalizedPackages: MasterPackage[] = activePackages.map((p: any) => ({
           ...p,
           tax_id: p?.tax_id ?? p?.taxid ?? p?.taxId ?? undefined,
         }));
-        console.log('📦 Package normalization:', normalizedPackages.map(p => ({ 
-          name: p.package_name, 
-          original_taxid: (p as any).taxid, 
-          normalized_tax_id: p.tax_id 
+        console.log('📦 Package normalization:', normalizedPackages.map(p => ({
+          name: p.package_name,
+          original_taxid: (p as any).taxid,
+          normalized_tax_id: p.tax_id
         })));
         setMasterPackages(normalizedPackages);
       }
 
       // Inventory (Products)
-      const invRows: any[] = extract('master_inventory', ['inventory','product_master','products']);
+      const invRows: any[] = extract('master_inventory', ['inventory', 'product_master', 'products']);
       if (invRows.length) {
         // Normalize field names from various APIs: prefer item_name; fallback to product_name or reference_code
         const normalizedInv: MasterInventory[] = invRows
-          .filter(p => p && (p.status==null || p.status===1))
+          .filter(p => p && (p.status == null || p.status === 1))
           .map(p => ({
             id: Number(p.id),
             product_id: p.product_id ?? p.id ?? 0,
@@ -1002,28 +1008,28 @@ export default function AddInvoice() {
       }
 
       // Employees
-      const employeeRows: MasterEmployee[] = extract('master_employee', ['employees','staff','staff_master']);
+      const employeeRows: MasterEmployee[] = extract('master_employee', ['employees', 'staff', 'staff_master']);
       if (employeeRows.length) {
-        const activeEmps = employeeRows.filter(e=> e && (e.status==null || e.status===1));
+        const activeEmps = employeeRows.filter(e => e && (e.status == null || e.status === 1));
         setMasterEmployees(activeEmps);
       }
 
       // Memberships
-      const membershipRows: MasterMembership[] = extract('master_membership', ['memberships','membership_master']);
+      const membershipRows: MasterMembership[] = extract('master_membership', ['memberships', 'membership_master']);
       if (membershipRows.length) {
-        const activeMemberships = membershipRows.filter(m=> m && (m.status==null || m.status===1));
+        const activeMemberships = membershipRows.filter(m => m && (m.status == null || m.status === 1));
         setMasterMemberships(activeMemberships);
       }
 
       // Customers - Load all customers as suggestions for quick access
-      const customerRows: CustomerSuggestion[] = extract('master_customer', ['customers','customer_master']);
+      const customerRows: CustomerSuggestion[] = extract('master_customer', ['customers', 'customer_master']);
       if (customerRows.length) {
-        const activeCustomers = customerRows.filter(c=> c && ((c as any).status==null || (c as any).status===1));
+        const activeCustomers = customerRows.filter(c => c && ((c as any).status == null || (c as any).status === 1));
         setCustomerSuggestions(dedupeCustomerSuggestions(activeCustomers));
       }
 
       // Categories - Build ID -> Name map for UI labels
-      const categoryRows: MasterCategory[] = extract('master_category', ['categories','category_master']);
+      const categoryRows: MasterCategory[] = extract('master_category', ['categories', 'category_master']);
       if (categoryRows.length) {
         const map: Record<string, string> = {};
         categoryRows.forEach(c => {
@@ -1044,7 +1050,7 @@ export default function AddInvoice() {
       }
 
       // HSNs
-      const hsnRows: MasterHSN[] = extract('master_hsn', ['hsn_master','hsn','master_hsn_code']);
+      const hsnRows: MasterHSN[] = extract('master_hsn', ['hsn_master', 'hsn', 'master_hsn_code']);
       if (hsnRows.length) {
         const activeHSN = hsnRows.filter(h => h && (h.status == null || h.status === 1));
         setMasterHSNs(activeHSN);
@@ -1185,21 +1191,21 @@ export default function AddInvoice() {
       moveServiceUp(service);
     }
   }, [moveServiceUp]);
-  
+
   const filteredServices = useMemo(() => {
     let filtered = masterServices;
-    
+
     // Apply search filter
     const q = serviceSearch.trim().toLowerCase();
     if (q) {
       filtered = filtered.filter(s => (s.service_name || '').toLowerCase().includes(q));
     }
-    
+
     // Apply category filter
     if (categoryFilter) {
       filtered = filtered.filter(s => String(s.category_id ?? '') === String(categoryFilter));
     }
-    
+
     // Apply gender filter
     if (genderFilter) {
       filtered = filtered.filter(s => s.preferred_gender === genderFilter);
@@ -1227,13 +1233,13 @@ export default function AddInvoice() {
     if (q) {
       filtered = filtered.filter(p => (p.package_name || '').toLowerCase().includes(q));
     }
-    
+
     // Apply selected-only toggle
     if (showOnlySelectedPackages) {
       const selectedSet = new Set(newInvoice.services.map(s => String(s.service_id)));
       filtered = filtered.filter(p => selectedSet.has(`pkg:${String(p.package_id)}`));
     }
-    
+
     return filtered;
   }, [masterPackages, packageSearch, showOnlySelectedPackages, newInvoice.services]);  // Get unique categories and genders for filter options
 
@@ -1279,7 +1285,7 @@ export default function AddInvoice() {
       .sort();
     return categories;
   }, [masterServices]);
-  
+
   const availableGenders = useMemo(() => {
     const genders = masterServices
       .map(s => s.preferred_gender)
@@ -1292,12 +1298,12 @@ export default function AddInvoice() {
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [customerSelectedIndex, setCustomerSelectedIndex] = useState(-1);
   const [activeCustomerRowId, setActiveCustomerRowId] = useState<string>('1'); // Track which customer row is showing suggestions
-  const customerNameRef = useRef<HTMLInputElement|null>(null);
-  const customerPhoneRef = useRef<HTMLInputElement|null>(null);
+  const customerNameRef = useRef<HTMLInputElement | null>(null);
+  const customerPhoneRef = useRef<HTMLInputElement | null>(null);
   const customerNameRefs = useRef<{ [customerId: string]: HTMLInputElement | null }>({});
   const customerPhoneRefs = useRef<{ [customerId: string]: HTMLInputElement | null }>({});
   const customerAnchorRef = useRef<'name' | 'phone' | null>(null);
-  const customerDropdownPos = useRef<{top:number;left:number;width:number}|null>(null);
+  const customerDropdownPos = useRef<{ top: number; left: number; width: number } | null>(null);
   const [customerDropdownTick, setCustomerDropdownTick] = useState(0); // force re-render when position updates
   const [sidebarMinimized, setSidebarMinimized] = useState(false);
   // Simple UI validation flags
@@ -1308,6 +1314,9 @@ export default function AddInvoice() {
     staff: false,
     payment: false,
     services: false,
+    customerAge: false,
+    customerHeight: false,
+    customerWeight: false,
   });
 
   // Clear payment highlight when user selects any payment mode or full credit covers total
@@ -1382,26 +1391,26 @@ export default function AddInvoice() {
       setCustomers(prev => prev.map(c =>
         c.id === '1'
           ? {
-              ...c,
-              customer: String(customerId || c.customer || ''),
-              customerId: String(customerId || c.customerId || ''),
-              customerName: name || c.customerName,
-              customerPhone: phone || c.customerPhone,
-              customerGender: gender || c.customerGender,
-            }
+            ...c,
+            customer: String(customerId || c.customer || ''),
+            customerId: String(customerId || c.customerId || ''),
+            customerName: name || c.customerName,
+            customerPhone: phone || c.customerPhone,
+            customerGender: gender || c.customerGender,
+          }
           : c
       ));
 
       const vc = Number(match.customer_visitcnt ?? match.total_visits ?? match.totalVisits ?? match.visit_count ?? 0) || 0;
       const cred = Number(match.customer_credit ?? match.credit_pending ?? match.pending_credit ?? match.wallet_balance ?? match.total_balance ?? 0) || 0;
 
-      setSelectedCustomer({ 
-        id: String(customerId || ''), 
-        name: name || 'Customer', 
-        email: match.email || '', 
-        phone, 
-        totalVisits: Number(match.total_visits||0), 
-        lastVisit: String(match.last_visit||''),
+      setSelectedCustomer({
+        id: String(customerId || ''),
+        name: name || 'Customer',
+        email: match.email || '',
+        phone,
+        totalVisits: Number(match.total_visits || 0),
+        lastVisit: String(match.last_visit || ''),
         visitCount: vc,
         customerCredit: cred
       });
@@ -1437,13 +1446,13 @@ export default function AddInvoice() {
       setCustomers(prev => prev.map(c =>
         c.id === '1'
           ? {
-              ...c,
-              customerMembershipId: membershipIdResolved || c.customerMembershipId || '',
-              customerBirthday: birthdayResolved || c.customerBirthday || '',
-              customerAnniversary: anniversaryResolved || c.customerAnniversary || '',
-              customerMembershipCardNo: cardResolved || c.customerMembershipCardNo || '',
-              customerAddress: addressResolved || c.customerAddress || '',
-            }
+            ...c,
+            customerMembershipId: membershipIdResolved || c.customerMembershipId || '',
+            customerBirthday: birthdayResolved || c.customerBirthday || '',
+            customerAnniversary: anniversaryResolved || c.customerAnniversary || '',
+            customerMembershipCardNo: cardResolved || c.customerMembershipCardNo || '',
+            customerAddress: addressResolved || c.customerAddress || '',
+          }
           : c
       ));
 
@@ -1493,19 +1502,19 @@ export default function AddInvoice() {
   // Auto-apply membership if customer input matches any suggestion
   useEffect(() => {
     if (!customerSuggestions.length || !newInvoice.customerName.trim()) return;
-    
+
     const currentName = newInvoice.customerName.toLowerCase().trim();
     const currentPhone = String(newInvoice.customerPhone || '').trim();
-    
+
     // Find matching customer in all suggestions
     const matchingSuggestion = customerSuggestions.find(suggestion => {
       const suggestionName = String(suggestion.customer_name || suggestion.full_name || suggestion.name || '').toLowerCase().trim();
       const suggestionPhone = String(suggestion.phone || suggestion.mobile || suggestion.customer_phone || '').trim();
-      
+
       // Match by name or phone
       return suggestionName === currentName || (suggestionPhone && currentPhone && suggestionPhone === currentPhone);
     });
-    
+
     // Auto-apply membership if found and not already applied
     if (matchingSuggestion) {
       const membershipId = (matchingSuggestion as any).membership_id;
@@ -1521,7 +1530,7 @@ export default function AddInvoice() {
   }, [fetchMasterData]);
 
   // Map for quick employee lookup`
-  const employeeMap = useMemo(()=> {
+  const employeeMap = useMemo(() => {
     const map: Record<string, MasterEmployee> = {};
     masterEmployees.forEach(emp => {
       map[String(emp.id)] = emp;
@@ -1930,7 +1939,7 @@ export default function AddInvoice() {
           if (emp) resolvedStaffId = String(emp.employee_id);
         }
         if (!resolvedStaffId && appt.employee_name) {
-          const empByName = masterEmployees.find(e => (e.employee_name||'').toLowerCase() === (appt.employee_name||'').toLowerCase());
+          const empByName = masterEmployees.find(e => (e.employee_name || '').toLowerCase() === (appt.employee_name || '').toLowerCase());
           if (empByName) resolvedStaffId = String(empByName.employee_id);
         }
 
@@ -1940,12 +1949,12 @@ export default function AddInvoice() {
           : (Array.isArray((appt as any).data) ? (appt as any).data : []);
 
         const services: Service[] = (svcSrc || []).map((s: any, idx: number) => {
-          const name = s.service_name || s.name || `Service ${idx+1}`;
+          const name = s.service_name || s.name || `Service ${idx + 1}`;
           const unit = Number(s.unit_price ?? s.price ?? 0) || 0;
           const qty = Number(s.qty ?? s.quantity ?? 1) || 1;
           const taxRate = s.tax_rate_percent != null ? Number(s.tax_rate_percent) : undefined;
           const taxId = s.tax_id ? String(s.tax_id) : undefined;
-          const service_id = String(s.service_id ?? s.id ?? (s.service_code ?? `SRV-${idx+1}`));
+          const service_id = String(s.service_id ?? s.id ?? (s.service_code ?? `SRV-${idx + 1}`));
           return {
             id: `prefill-${Date.now()}-${idx}`,
             name,
@@ -1974,17 +1983,17 @@ export default function AddInvoice() {
             setApptTaxSummary({ cgst: Number(cg.toFixed(2)), sgst: Number(sg.toFixed(2)), total: Number(tx.toFixed(2)) });
             setLockToApptTax(true);
           }
-        } catch {}
+        } catch { }
 
         // Attempt to map payment mode name to ID
         let paymentModeId = '';
         const payName = (appt as any).payment_mode || '';
         if (payName && masterPaymentModes.length) {
-          const pm = masterPaymentModes.find(p => (p.payment_mode_name||'').toLowerCase() === String(payName).toLowerCase());
+          const pm = masterPaymentModes.find(p => (p.payment_mode_name || '').toLowerCase() === String(payName).toLowerCase());
           if (pm) paymentModeId = String(pm.id);
         } else if (masterPaymentModes.length) {
           // default to cash
-          const cash = masterPaymentModes.find(p => (p.payment_mode_name||'').toLowerCase().includes('cash')) || masterPaymentModes[0];
+          const cash = masterPaymentModes.find(p => (p.payment_mode_name || '').toLowerCase().includes('cash')) || masterPaymentModes[0];
           if (cash) paymentModeId = String(cash.id);
         }
 
@@ -2007,7 +2016,7 @@ export default function AddInvoice() {
           tax: derivedTax || prev.tax,
           // Note: taxId per line handled by service.taxId; keep header taxId as-is
           notes: String((appt as any).special_requirements || prev.notes || ''),
-          paymentMethod: paymentModeId ? (masterPaymentModes.find(p=> String(p.id)===paymentModeId)?.payment_mode_name.toLowerCase() || prev.paymentMethod) : prev.paymentMethod,
+          paymentMethod: paymentModeId ? (masterPaymentModes.find(p => String(p.id) === paymentModeId)?.payment_mode_name.toLowerCase() || prev.paymentMethod) : prev.paymentMethod,
           paymentModeId: paymentModeId || prev.paymentModeId,
         }));
 
@@ -2041,18 +2050,18 @@ export default function AddInvoice() {
             };
             return [updatedFirst, ...prev.slice(1)];
           });
-        } catch {}
+        } catch { }
 
         // Also set selectedCustomer minimal info so UI shows avatar
         const cname = (appt as any).customer_name || '';
         const cphone = String((appt as any).customer_mobile || (appt as any).customer_phone || '');
         if (cname || cphone) {
-          setSelectedCustomer({ 
-            id: String((appt as any).customer_id || ''), 
-            name: cname || 'Customer', 
-            email: '', 
-            phone: String(cphone||''), 
-            totalVisits: 0, 
+          setSelectedCustomer({
+            id: String((appt as any).customer_id || ''),
+            name: cname || 'Customer',
+            email: '',
+            phone: String(cphone || ''),
+            totalVisits: 0,
             lastVisit: '',
             visitCount: 0,
             customerCredit: 0
@@ -2073,18 +2082,18 @@ export default function AddInvoice() {
   useEffect(() => {
     // Wait for both conditions: edit mode setup and master data loaded
     if (!isEditMode || !editId || !user || loading) return;
-    
+
     const loadInvoiceData = async () => {
       setLoadingEditData(true);
       try {
         const acc = (user as any)?.account_code;
         const ret = (user as any)?.retail_code;
-        
-        
+
+
         // Get invoice data from the billing service
         const response = await InvoiceService.get(editId, acc, ret) as any;
-  // Debug logs removed
-        
+        // Debug logs removed
+
         if (response?.success && Array.isArray(response?.data)) {
           const lineRows = response.data;
           const header = (response as any).header || {};
@@ -2106,15 +2115,15 @@ export default function AddInvoice() {
             });
             return;
           }
-          
+
           if (lineRows[0]) {
             const debugFirst = { ...lineRows[0] };
-            
+
             if (header && Object.keys(header).length > 0) {
               // Removed header payment field debug log
             }
           }
-          
+
           // Map service lines -> services
           // NOTE: For multi-staff support, the backend (and our submit payload) may return qty=N
           // as N separate rows (qty=1 each). When editing, regroup them into one service with
@@ -2250,11 +2259,11 @@ export default function AddInvoice() {
           } catch (_) {
             // no-op
           }
-          
+
           // Removed mapped services debug log
-          
+
           const first = (lineRows[0] ? { ...lineRows[0] } : (hasHeader ? { ...header } : {})) as any;
-          
+
           // Prefer header values if present
           const customerName = String(first.customer_name || first.customerr_name || header.customer_name || header.customerr_name || '');
           const customerPhone = String(first.customer_number || first.customer_mobile || header.customer_number || header.customer_mobile || '');
@@ -2300,12 +2309,12 @@ export default function AddInvoice() {
             first?.notes ??
             header?.notes ??
             '';
-          
+
           // Try to find payment method name from payment mode ID
           let paymentMethodName = "cash";
           if (paymentModeId && masterPaymentModes.length > 0) {
-            const paymentMode = masterPaymentModes.find(pm => 
-              String(pm.id) === String(paymentModeId) || 
+            const paymentMode = masterPaymentModes.find(pm =>
+              String(pm.id) === String(paymentModeId) ||
               String(pm.payment_id) === String(paymentModeId)
             );
             if (paymentMode) {
@@ -2318,7 +2327,7 @@ export default function AddInvoice() {
             // No payment mode ID found in invoice data; defaulting to cash
             // Try to find cash payment mode as default
             if (masterPaymentModes.length > 0) {
-              const cashMode = masterPaymentModes.find(pm => 
+              const cashMode = masterPaymentModes.find(pm =>
                 pm.payment_mode_name.toLowerCase().includes('cash')
               );
               if (cashMode) {
@@ -2335,7 +2344,7 @@ export default function AddInvoice() {
               paymentMethodName = "cash"; // fallback when no payment modes are loaded
             }
           }
-          
+
           // Also check if payment method name is directly available in the data
           const directPaymentMethod =
             first.payment_method ||
@@ -2347,9 +2356,9 @@ export default function AddInvoice() {
           if (directPaymentMethod && !paymentMethodName) {
             paymentMethodName = String(directPaymentMethod).toLowerCase();
           }
-          
+
           // Removed extracted data debug log
-          
+
           // Update the form state
           const newInvoiceData = {
             customer: first.customer_id || header.customer_id || "",
@@ -2372,9 +2381,9 @@ export default function AddInvoice() {
             customerMembershipCardNo: "",
             customerAddress: "",
           };
-          
+
           // Removed invoice data set debug log
-          
+
           setNewInvoice({ ...newInvoiceData, services: mergedServices.length ? mergedServices : newInvoiceData.services });
           // Hydrate multi-customer rows with the loaded primary customer
           setCustomers([{
@@ -2509,13 +2518,13 @@ export default function AddInvoice() {
           } catch (e) {
             console.warn('Failed to set global staff from header', e);
           }
-          
+
           // Add default service if no services loaded
           if (!services.length) {
             // Removed no services debug log
             setTimeout(() => addService(), 100);
           }
-          
+
           // Set customer data if available
           if (first.customer_id || header.customer_id) {
             const customerData = {
@@ -2562,13 +2571,13 @@ export default function AddInvoice() {
             } catch (e) {
               console.warn('Gender backfill failed', e);
             }
-            
+
             // Load customer suggestions for the existing customer name to enable membership functionality
             if (customerName && customerName.trim()) {
               try {
                 const customerSearchResponse = await ApiService.get(`/customer-search?q=${encodeURIComponent(customerName.trim())}&account_code=${encodeURIComponent(acc)}&retail_code=${encodeURIComponent(ret)}&include_membership=true`) as any;
                 const customerSearchData = customerSearchResponse?.data || [];
-                
+
                 // Debug: Check edit mode customer search response
                 console.log('Edit mode customer search response:', customerSearchData.map((c: any) => ({
                   name: c.customer_name || c.name,
@@ -2576,12 +2585,12 @@ export default function AddInvoice() {
                   membership_id: c.membership_id,
                   customer_id: c.customer_id
                 })));
-                
+
                 if (Array.isArray(customerSearchData) && customerSearchData.length > 0) {
                   setCustomerSuggestions(dedupeCustomerSuggestions(customerSearchData));
-                  
+
                   // Find matching customer and apply membership if available
-                  const matchingCustomer = customerSearchData.find((cust: any) => 
+                  const matchingCustomer = customerSearchData.find((cust: any) =>
                     (cust.customer_name?.toLowerCase() === customerName.toLowerCase()) ||
                     (cust.name?.toLowerCase() === customerName.toLowerCase()) ||
                     (cust.full_name?.toLowerCase() === customerName.toLowerCase())
@@ -2596,7 +2605,7 @@ export default function AddInvoice() {
                     // Update customers row with visit count and credit
                     setCustomers(prev => prev.map((c, i) => i === 0 ? { ...c, visitCount: String(vc), creditPending: String(cred) } : c));
                   }
-                  
+
                   if (matchingCustomer?.membership_id) {
                     applyMembershipDiscount(matchingCustomer.membership_id);
                   }
@@ -2619,14 +2628,14 @@ export default function AddInvoice() {
                 console.warn('Failed to load visit count or wallet balance for customer', e);
               }
             }
-            
+
             // Apply membership if available from invoice data (fallback)
             const membershipId = first.membership_id || header.membership_id || (first.customer as any)?.membership_id || (header.customer as any)?.membership_id;
             if (membershipId) {
               applyMembershipDiscount(membershipId);
             }
           }
-          
+
           // Record header billstatus so UI can react (hide actions for cancelled bills)
           setInvoiceBillStatus(String(header.billstatus || header.bill_status || header.BILL_STATUS || '').trim() || null);
         } else {
@@ -2648,26 +2657,26 @@ export default function AddInvoice() {
         setLoadingEditData(false);
       }
     };
-    
+
     loadInvoiceData();
   }, [isEditMode, editId, user, toast, loading, masterTaxes.length, masterEmployees.length, masterServices.length, masterPackages.length, masterPaymentModes.length]);
 
   // Update payment method name when master payment modes are loaded and we have a payment mode ID
   useEffect(() => {
     if (newInvoice.paymentModeId && masterPaymentModes.length > 0) {
-      const paymentMode = masterPaymentModes.find(pm => 
-        String(pm.id) === String(newInvoice.paymentModeId) || 
+      const paymentMode = masterPaymentModes.find(pm =>
+        String(pm.id) === String(newInvoice.paymentModeId) ||
         String(pm.payment_id) === String(newInvoice.paymentModeId)
       );
       if (paymentMode) {
         const paymentMethodName = paymentMode.payment_mode_name.toLowerCase();
         // Removed payment method update debug log
-        
+
         // Only update if the payment method is different
         if (newInvoice.paymentMethod !== paymentMethodName) {
-          setNewInvoice(prev => ({ 
-            ...prev, 
-            paymentMethod: paymentMethodName 
+          setNewInvoice(prev => ({
+            ...prev,
+            paymentMethod: paymentMethodName
           }));
         }
       }
@@ -2854,7 +2863,7 @@ export default function AddInvoice() {
     // Auto-assign global staff if one is selected
     const staff = globalStaffId ? masterEmployees.find(emp => emp.employee_id === globalStaffId) : null;
     const staffName = staff ? staff.employee_name : "";
-    
+
     const newService: Service = {
       id: Math.random().toString(36).substr(2, 9),
       name: "",
@@ -2922,12 +2931,12 @@ export default function AddInvoice() {
   };
 
   const updateCustomer = (customerId: string, field: string, value: string) => {
-    setCustomers(prev => prev.map(customer => 
-      customer.id === customerId 
+    setCustomers(prev => prev.map(customer =>
+      customer.id === customerId
         ? { ...customer, [field]: value }
         : customer
     ));
-    
+
     // Update the first customer in newInvoice for backward compatibility
     if (customerId === '1') {
       setNewInvoice(prev => ({
@@ -2944,10 +2953,10 @@ export default function AddInvoice() {
     }
 
     const ratio = newTotal / oldTotal;
-    
+
     setSelectedPaymentModes(prev => {
       let totalAdjusted = 0;
-      
+
       const adjusted = prev.map((mode, index) => {
         let newAmount;
         if (index === prev.length - 1) {
@@ -2957,13 +2966,13 @@ export default function AddInvoice() {
           newAmount = Number((mode.amount * ratio).toFixed(2));
           totalAdjusted += newAmount;
         }
-        
+
         return {
           ...mode,
           amount: Math.max(0, newAmount) // Ensure no negative amounts
         };
       });
-      
+
       return adjusted;
     });
   };
@@ -2981,7 +2990,7 @@ export default function AddInvoice() {
     // Calculate total after removal
     const serviceToRemove = newInvoice.services.find(service => service.id === id);
     let totalAfterRemoval = currentTotal;
-    
+
     if (serviceToRemove) {
       const subtotal = Number(serviceToRemove.price || 0) * Number(serviceToRemove.quantity || 1);
       const discountAmount = subtotal * (Number(serviceToRemove.discount_percentage || 0) / 100);
@@ -2995,14 +3004,14 @@ export default function AddInvoice() {
       ...prev,
       services: prev.services.filter((service) => service.id !== id),
     }));
-    
+
     // Recalculate payment modes if there's a total change
     if (currentTotal !== totalAfterRemoval) {
       const roundedCurrentTotal = Math.round(currentTotal);
       const roundedNewTotal = Math.round(totalAfterRemoval);
       recalculatePaymentModes(roundedCurrentTotal, roundedNewTotal);
     }
-    
+
     // Clean up refs
     delete serviceInputRefs.current[id];
     delete priceInputRefs.current[id];
@@ -3062,27 +3071,27 @@ export default function AddInvoice() {
   // Direct staff assignment using useCallback for stability
   const updateServiceStaff = useCallback((serviceId: string, staffId: string, assignmentIndex: number = 0) => {
     console.log('🔍 DIRECT STAFF ASSIGNMENT START:', { serviceId, staffId, assignmentIndex });
-    
+
     const staff = masterEmployees.find(emp => String(emp.employee_id) === String(staffId));
     const staffName = staff ? staff.employee_name : "";
     const emp = employeeMap[String(staffId)];
-    
+
     console.log('🔍 STAFF LOOKUP RESULT:', {
       staff: staff?.employee_name,
       emp: emp?.employee_name,
       markup: emp?.price_markup_percent
     });
-    
+
     setNewInvoice(prevInvoice => {
       const currentServices = [...prevInvoice.services];
-      
+
       // Find and update the specific service
       const serviceIndex = currentServices.findIndex(s => s.id === serviceId);
       if (serviceIndex === -1) {
         console.error('Service not found:', serviceId);
         return prevInvoice;
       }
-      
+
       const currentService = currentServices[serviceIndex];
       const sidStr = String(currentService.service_id || '');
       const isServiceOnly = !(sidStr.startsWith('pkg:') || sidStr.startsWith('inv:'));
@@ -3097,12 +3106,12 @@ export default function AddInvoice() {
         price: currentService.price,
         basePrice: currentService.basePrice
       });
-      
+
       // Resolve base price (prefer existing basePrice; fallback to master catalog), then apply employee markup once
       let effectiveBase = currentService.basePrice;
       if (effectiveBase == null) {
         const ms = masterServices.find(ms => (ms.service_id || String(ms.id)) === currentService.service_id) ||
-                   masterServices.find(ms => ms.service_name === currentService.name);
+          masterServices.find(ms => ms.service_name === currentService.name);
         effectiveBase = ms ? Number(ms.price || 0) : Number(currentService.price || 0);
         currentService.basePrice = effectiveBase;
       }
@@ -3152,7 +3161,7 @@ export default function AddInvoice() {
           price: newPrice,
         };
       }
-      
+
       console.log('🔍 UPDATED SERVICE:', {
         id: updatedService.id,
         name: updatedService.name,
@@ -3160,15 +3169,15 @@ export default function AddInvoice() {
         staffName: updatedService.staffName,
         price: updatedService.price
       });
-      
+
       // Replace the service in the array
       currentServices[serviceIndex] = updatedService;
-      
+
       const newInvoiceState = {
         ...prevInvoice,
         services: currentServices
       };
-      
+
       console.log('🔍 FINAL SERVICES STATE:', newInvoiceState.services.map(s => ({
         id: s.id,
         name: s.name,
@@ -3176,26 +3185,27 @@ export default function AddInvoice() {
         staffName: s.staffName,
         price: s.price
       })));
-      
+
       return newInvoiceState;
     });
   }, [masterEmployees, employeeMap]);
 
   // Update service HSN selection and auto-apply related tax
   const updateServiceHSN = useCallback((serviceId: string, hsnIdOrCode: string) => {
-    const hsn = masterHSNs.find(h => String(h.hsn_id||h.id||h.hsn_code) === String(hsnIdOrCode) || String(h.hsn_code) === String(hsnIdOrCode));
+    const hsn = masterHSNs.find(h => String(h.hsn_id || h.id || h.hsn_code) === String(hsnIdOrCode) || String(h.hsn_code) === String(hsnIdOrCode));
     let nextTaxId: string | undefined = undefined;
     let nextTaxRate: number | undefined = undefined;
     if (hsn && hsn.tax_id != null) {
       const tx = masterTaxes.find(t => String(t.tax_id) === String(hsn.tax_id) || String(t.id) === String(hsn.tax_id));
       if (tx) {
         nextTaxId = String(tx.id);
-        nextTaxRate = (Number(tx.cgst)||0)+(Number(tx.sgst)||0)+(Number(tx.igst)||0);
+        nextTaxRate = (Number(tx.cgst) || 0) + (Number(tx.sgst) || 0) + (Number(tx.igst) || 0);
       }
     }
     setNewInvoice(prev => ({
       ...prev,
-      services: prev.services.map(s => s.id === serviceId ? { ...s, // attach selected HSN into description for now
+      services: prev.services.map(s => s.id === serviceId ? {
+        ...s, // attach selected HSN into description for now
         description: s.description,
         taxId: nextTaxId ?? s.taxId,
         taxRate: nextTaxRate ?? s.taxRate,
@@ -3206,17 +3216,17 @@ export default function AddInvoice() {
   // Function to assign global staff to all selected services
   const assignGlobalStaffToAllServices = useCallback((staffId: string) => {
     if (!staffId) return;
-    
+
     const staff = masterEmployees.find(emp => emp.employee_id === staffId);
     const staffName = staff ? staff.employee_name : "";
     const emp = employeeMap[staffId];
-    
+
     console.log('🔍 GLOBAL STAFF ASSIGNMENT:', {
       staffId,
       staffName,
       markup: emp?.price_markup_percent
     });
-    
+
     setNewInvoice(prevInvoice => {
       const updatedServices = prevInvoice.services.map(service => {
         // Require a valid row (has a name); price may be 0 initially
@@ -3312,16 +3322,16 @@ export default function AddInvoice() {
           adjustedPrice = fixedExtra > 0 ? (basePrice + fixedExtra) : (basePrice + (basePrice * markupPercent / 100));
         }
       }
-      
+
       // Get tax information
       let taxId: string | undefined;
       let taxRate: number | undefined;
-      
+
       const taxIdFromService = (masterService as any).tax_id;
       if (taxIdFromService) {
         taxId = String(taxIdFromService);
-        const tx = masterTaxes.find(t => 
-          String(t.tax_id) === String(taxIdFromService) || 
+        const tx = masterTaxes.find(t =>
+          String(t.tax_id) === String(taxIdFromService) ||
           String(t.id) === String(taxIdFromService)
         );
         if (tx) {
@@ -3332,7 +3342,7 @@ export default function AddInvoice() {
       // Auto-assign global staff if one is selected
       const staff = globalStaffId ? masterEmployees.find(emp => emp.employee_id === globalStaffId) : null;
       const staffName = staff ? staff.employee_name : "";
-      
+
       const newService: Service = {
         id: Math.random().toString(36).substr(2, 9),
         name: masterService.service_name,
@@ -3352,7 +3362,7 @@ export default function AddInvoice() {
         ...prev,
         services: [...prev.services, newService],
       }));
-      setInvalid(prev => ({...prev, services:false}));
+      setInvalid(prev => ({ ...prev, services: false }));
     }
   };
 
@@ -3373,7 +3383,7 @@ export default function AddInvoice() {
       if (prod.tax) {
         taxId = String(prod.tax);
         const tx = masterTaxes.find(t => String(t.tax_id) === String(prod.tax) || String(t.id) === String(prod.tax));
-        if (tx) taxRate = (Number(tx.cgst)||0) + (Number(tx.sgst)||0) + (Number(tx.igst)||0);
+        if (tx) taxRate = (Number(tx.cgst) || 0) + (Number(tx.sgst) || 0) + (Number(tx.igst) || 0);
       }
       if (productsTaxExempted) {
         taxRate = 0; // products-specific tax exemption
@@ -3397,8 +3407,8 @@ export default function AddInvoice() {
         staffId: globalStaffId || '',
         staffName: globalStaffId ? (masterEmployees.find(e => e.employee_id === globalStaffId)?.employee_name || '') : ''
       };
-      setNewInvoice(prev => ({...prev, services: [...prev.services, newLine]}));
-      setInvalid(prev => ({...prev, services:false}));
+      setNewInvoice(prev => ({ ...prev, services: [...prev.services, newLine] }));
+      setInvalid(prev => ({ ...prev, services: false }));
     }
   };
 
@@ -3416,7 +3426,7 @@ export default function AddInvoice() {
             } else {
               // restore tax from taxId if available
               const tx = masterTaxes.find(t => String(t.tax_id) === String(s.taxId) || String(t.id) === String(s.taxId));
-              const rate = tx ? (Number(tx.cgst)||0) + (Number(tx.sgst)||0) + (Number(tx.igst)||0) : undefined;
+              const rate = tx ? (Number(tx.cgst) || 0) + (Number(tx.sgst) || 0) + (Number(tx.igst) || 0) : undefined;
               return { ...s, taxRate: rate };
             }
           }
@@ -3443,11 +3453,11 @@ export default function AddInvoice() {
       // Packages use base price without markup
       const basePrice = Number(masterPackage.package_price) || 0;
       const adjustedPrice = basePrice; // No markup for packages
-      
+
       // Get tax information
       let taxId: string | undefined;
       let taxRate: number | undefined;
-      
+
       const taxIdFromPackage = masterPackage.tax_id;
       console.log('📦 Package object structure:', masterPackage);
       console.log('📦 Package tax lookup:', {
@@ -3456,11 +3466,11 @@ export default function AddInvoice() {
         rawTaxId: (masterPackage as any).taxid,
         availableTaxes: masterTaxes.map(t => ({ tax_id: t.tax_id, desc: t.description, cgst: t.cgst, sgst: t.sgst }))
       });
-      
+
       if (taxIdFromPackage) {
         taxId = String(taxIdFromPackage);
-        const tx = masterTaxes.find(t => 
-          String(t.tax_id) === String(taxIdFromPackage) || 
+        const tx = masterTaxes.find(t =>
+          String(t.tax_id) === String(taxIdFromPackage) ||
           String(t.id) === String(taxIdFromPackage)
         );
         console.log('📦 Found tax record:', tx);
@@ -3475,7 +3485,7 @@ export default function AddInvoice() {
         console.warn('📦 Package has no tax_id, defaulting to 0%');
         taxRate = 0;
       }
-      
+
       if (packagesTaxExempted) {
         taxRate = 0; // packages-specific tax exemption
         console.log('📦 Tax exempted via toggle, setting to 0%');
@@ -3484,7 +3494,7 @@ export default function AddInvoice() {
       // Auto-assign global staff if one is selected
       const staff = globalStaffId ? masterEmployees.find(emp => emp.employee_id === globalStaffId) : null;
       const staffName = staff ? staff.employee_name : "";
-      
+
       const newService: Service = {
         id: Math.random().toString(36).substr(2, 9),
         name: masterPackage.package_name,
@@ -3500,7 +3510,7 @@ export default function AddInvoice() {
         staffName: staffName,
         staffAssignments: globalStaffId ? [{ staffId: globalStaffId, staffName }] : [{ staffId: '', staffName: '' }],
       };
-      
+
       console.log('📦 Adding package service:', {
         name: newService.name,
         taxId: newService.taxId,
@@ -3511,7 +3521,7 @@ export default function AddInvoice() {
         ...prev,
         services: [...prev.services, newService],
       }));
-      setInvalid(prev => ({...prev, services:false}));
+      setInvalid(prev => ({ ...prev, services: false }));
     }
   };
 
@@ -3529,7 +3539,7 @@ export default function AddInvoice() {
             } else {
               // restore tax from taxId if available
               const tx = masterTaxes.find(t => String(t.tax_id) === String(s.taxId) || String(t.id) === String(s.taxId));
-              const rate = tx ? (Number(tx.cgst)||0) + (Number(tx.sgst)||0) + (Number(tx.igst)||0) : undefined;
+              const rate = tx ? (Number(tx.cgst) || 0) + (Number(tx.sgst) || 0) + (Number(tx.igst) || 0) : undefined;
               return { ...s, taxRate: rate };
             }
           }
@@ -3564,25 +3574,25 @@ export default function AddInvoice() {
         const input = serviceInputRefs.current[id];
         if (input) {
           const rect = input.getBoundingClientRect();
-          
+
           // If input is not visible, hide dropdown
           if (rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth) {
             setShowSuggestions(null);
             return;
           }
-          
+
           // Calculate optimal position
           const viewportHeight = window.innerHeight;
           const viewportWidth = window.innerWidth;
           const dropdownHeight = 200;
           const dropdownWidth = Math.max(rect.width, 250);
-          
+
           // Position below input by default, but above if no space below
           let top = rect.bottom + 4; // fixed positioned element uses viewport coords
           if (rect.bottom + dropdownHeight > viewportHeight && rect.top > dropdownHeight) {
             top = rect.top - dropdownHeight - 4;
           }
-          
+
           // Ensure dropdown stays within viewport horizontally
           let left = rect.left;
           if (left + dropdownWidth > viewportWidth) {
@@ -3591,7 +3601,7 @@ export default function AddInvoice() {
           if (left < 8) {
             left = 8;
           }
-          
+
           setDropdownPosition({
             top,
             left,
@@ -3612,7 +3622,7 @@ export default function AddInvoice() {
     const emp = assignedStaffId ? employeeMap[assignedStaffId] : undefined;
     const fixedExtra = emp ? (Number((emp as any).price_markup_amount) || 0) : 0;
     const markupPercent = emp ? (Number(emp.price_markup_percent) || 0) : 0;
-    const basePrice = Number(suggestion.price)||0;
+    const basePrice = Number(suggestion.price) || 0;
     const adjustedPrice = fixedExtra > 0 ? (basePrice + fixedExtra) : (basePrice + (basePrice * markupPercent / 100));
     let taxId: string | undefined;
     let taxRate: number | undefined;
@@ -3621,7 +3631,7 @@ export default function AddInvoice() {
       taxId = (ms as any).tax_id || undefined;
       if (taxId) {
         const tx = masterTaxes.find(t => String(t.tax_id) === String(taxId) || String(t.id) === String(taxId));
-        if (tx) taxRate = (Number(tx.cgst)||0) + (Number(tx.sgst)||0) + (Number(tx.igst)||0);
+        if (tx) taxRate = (Number(tx.cgst) || 0) + (Number(tx.sgst) || 0) + (Number(tx.igst) || 0);
       }
     }
     setNewInvoice(prev => ({
@@ -3661,13 +3671,13 @@ export default function AddInvoice() {
     if (field === "service" && showSuggestions === id && suggestions.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
+        setSelectedSuggestionIndex(prev =>
           prev < suggestions.length - 1 ? prev + 1 : 0
         );
         return;
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
+        setSelectedSuggestionIndex(prev =>
           prev > 0 ? prev - 1 : suggestions.length - 1
         );
         return;
@@ -3777,7 +3787,7 @@ export default function AddInvoice() {
     const sid = String(s.service_id || '');
     return !(sid.startsWith('pkg:') || sid.startsWith('inv:'));
   });
-  const grossSum = lineGrosses.reduce((a,b)=>a+b,0);
+  const grossSum = lineGrosses.reduce((a, b) => a + b, 0);
   const grossSumServices = lineGrosses.reduce((sum, g, idx) => sum + (isServiceFlags[idx] ? g : 0), 0);
   // Membership discount should apply ONLY to service lines (exclude packages/products)
   const membershipDiscountAmountOverall = (membershipPercent > 0 && grossSumServices > 0)
@@ -3792,21 +3802,21 @@ export default function AddInvoice() {
     ? (subtotal * additionalPercent) / 100
     : Math.max(0, Math.min(discountValue, subtotal) - membershipDiscountAmountOverall); // Fixed: entered represents total (membership+extra)
   const allocProportional = (total: number) => {
-    if (!grossSum || total <= 0) return lineGrosses.map(()=>0);
+    if (!grossSum || total <= 0) return lineGrosses.map(() => 0);
     const raw = lineGrosses.map(g => Number(((g / grossSum) * total).toFixed(2)));
     // fix rounding drift on the last item
-    const diff = Number((total - raw.reduce((a,b)=>a+b,0)).toFixed(2));
-    if (raw.length > 0) raw[raw.length-1] = Number((raw[raw.length-1] + diff).toFixed(2));
+    const diff = Number((total - raw.reduce((a, b) => a + b, 0)).toFixed(2));
+    if (raw.length > 0) raw[raw.length - 1] = Number((raw[raw.length - 1] + diff).toFixed(2));
     return raw;
   };
   const regularAlloc = allocProportional(additionalDiscountAmountOverall);
   const allocProportionalEligible = (total: number, eligible: boolean[]) => {
-    if (!total || total <= 0) return lineGrosses.map(()=>0);
+    if (!total || total <= 0) return lineGrosses.map(() => 0);
     const eligibleSum = lineGrosses.reduce((sum, g, idx) => sum + (eligible[idx] ? g : 0), 0);
-    if (!eligibleSum) return lineGrosses.map(()=>0);
+    if (!eligibleSum) return lineGrosses.map(() => 0);
     const raw = lineGrosses.map((g, idx) => Number((((eligible[idx] ? g : 0) / eligibleSum) * total).toFixed(2)));
-    const diff = Number((total - raw.reduce((a,b)=>a+b,0)).toFixed(2));
-    if (raw.length > 0) raw[raw.length-1] = Number((raw[raw.length-1] + diff).toFixed(2));
+    const diff = Number((total - raw.reduce((a, b) => a + b, 0)).toFixed(2));
+    if (raw.length > 0) raw[raw.length - 1] = Number((raw[raw.length - 1] + diff).toFixed(2));
     return raw;
   };
   const membershipAlloc = allocProportionalEligible(membershipDiscountAmountOverall, isServiceFlags);
@@ -3825,23 +3835,23 @@ export default function AddInvoice() {
     // Calculate taxable amount by subtracting the pre-calculated tax from subtotal after discounts
     const totalDiscountAmount = additionalDiscountAmountOverall + membershipDiscountAmountOverall;
     const afterDiscountSubtotal = subtotal - totalDiscountAmount;
-    
+
     cgstTotal = Number((apptTaxSummary.cgst || 0).toFixed(2));
     sgstTotal = Number((apptTaxSummary.sgst || 0).toFixed(2));
     igstTotal = 0;
     taxAmount = Number((apptTaxSummary.total || (cgstTotal + sgstTotal)).toFixed(2));
-    
+
     // Derive taxable amount by subtracting tax from the after-discount subtotal
     taxableAmount = Math.max(afterDiscountSubtotal - taxAmount, 0);
-    
+
     // Set rate displays based on appointment data or fallback to service rates
     newInvoice.services.forEach(s => {
       if (s.taxId) {
         const tx = masterTaxes.find(t => String(t.tax_id) === String(s.taxId) || String(t.id) === String(s.taxId));
         if (tx) {
-          cgstRateSet.add(Number(tx.cgst)||0);
-          sgstRateSet.add(Number(tx.sgst)||0);
-          if (tx.igst) igstRateSet.add(Number(tx.igst)||0);
+          cgstRateSet.add(Number(tx.cgst) || 0);
+          sgstRateSet.add(Number(tx.sgst) || 0);
+          if (tx.igst) igstRateSet.add(Number(tx.igst) || 0);
         }
       } else if (s.taxRate != null) {
         const halfRate = s.taxRate / 2;
@@ -3871,7 +3881,7 @@ export default function AddInvoice() {
       if (!productExempt && !packageExempt && s.taxId) {
         const tx = masterTaxes.find(t => String(t.tax_id) === String(s.taxId) || String(t.id) === String(s.taxId));
         if (tx) {
-          cRate = Number(tx.cgst)||0; sRate = Number(tx.sgst)||0; iRate = Number(tx.igst)||0;
+          cRate = Number(tx.cgst) || 0; sRate = Number(tx.sgst) || 0; iRate = Number(tx.igst) || 0;
         }
       }
       // Fallback if we only have combined taxRate and no taxId mapping
@@ -3923,7 +3933,7 @@ export default function AddInvoice() {
   useEffect(() => {
     const totalPaid = selectedPaymentModes.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     const remaining = Math.max(0, roundedTotal - totalPaid);
-    
+
     // Only clear credit if payment modes fully cover the total
     if (remaining === 0 && creditAmount > 0) {
       setCreditAmount(0);
@@ -3933,7 +3943,7 @@ export default function AddInvoice() {
 
   // Track previous total to detect changes and recalculate payment modes
   const [previousTotal, setPreviousTotal] = useState<number>(0);
-  
+
   useEffect(() => {
     // When total changes due to service modifications, recalculate payment modes
     if (previousTotal !== roundedTotal && previousTotal > 0 && roundedTotal > 0 && selectedPaymentModes.length > 0) {
@@ -3950,17 +3960,17 @@ export default function AddInvoice() {
       const services = prev.services.map(s => {
         if ((s.taxRate == null || s.taxId == null) && s.service_id) {
           const ms = masterServices.find(ms => (ms.service_id || String(ms.id)) === s.service_id);
-            if (ms) {
-              const taxId: any = (ms as any).tax_id;
-              if (taxId) {
-                const tx = masterTaxes.find(t => String(t.tax_id) === String(taxId) || String(t.id) === String(taxId));
-                if (tx) {
-                  const taxRate = (Number(tx.cgst)||0)+(Number(tx.sgst)||0)+(Number(tx.igst)||0);
-                  changed = true;
-                  return { ...s, taxId: String(taxId), taxRate };
-                }
+          if (ms) {
+            const taxId: any = (ms as any).tax_id;
+            if (taxId) {
+              const tx = masterTaxes.find(t => String(t.tax_id) === String(taxId) || String(t.id) === String(taxId));
+              if (tx) {
+                const taxRate = (Number(tx.cgst) || 0) + (Number(tx.sgst) || 0) + (Number(tx.igst) || 0);
+                changed = true;
+                return { ...s, taxId: String(taxId), taxRate };
               }
             }
+          }
         }
         return s;
       });
@@ -3971,7 +3981,7 @@ export default function AddInvoice() {
   // Fetch customer visit history
   const fetchVisitHistory = useCallback(async (customerId: string | number) => {
     if (!customerId) return;
-    
+
     setLoadingVisitHistory(true);
     try {
       const acc = (user as any)?.account_code;
@@ -3979,7 +3989,7 @@ export default function AddInvoice() {
       const params = new URLSearchParams();
       if (acc) params.append('account_code', acc);
       if (ret) params.append('retail_code', ret);
-      
+
       const response = await ApiService.get(`/customer-visit-history/${customerId}?${params.toString()}`);
       setVisitHistoryData(response);
       setShowVisitHistory(true);
@@ -4028,7 +4038,7 @@ export default function AddInvoice() {
   }, [user, toast]);
 
   // Debounced customer search
-  const customerSearchTimeout = useRef<number|undefined>(undefined);
+  const customerSearchTimeout = useRef<number | undefined>(undefined);
   // Function to calculate dropdown position for active customer row
   const updateDropdownPosition = (field: 'name' | 'phone') => {
     if (!showCustomerSuggestions || customerSuggestions.length === 0) {
@@ -4036,27 +4046,27 @@ export default function AddInvoice() {
     }
 
     let inputElement: HTMLInputElement | null = null;
-    
+
     // Find the correct input element based on active row and field
     if (field === 'name') {
-      inputElement = activeCustomerRowId === '1' 
-        ? customerNameRef.current 
+      inputElement = activeCustomerRowId === '1'
+        ? customerNameRef.current
         : customerNameRefs.current[activeCustomerRowId];
     } else if (field === 'phone') {
-      inputElement = activeCustomerRowId === '1' 
-        ? customerPhoneRef.current 
+      inputElement = activeCustomerRowId === '1'
+        ? customerPhoneRef.current
         : customerPhoneRefs.current[activeCustomerRowId];
     }
-    
+
     if (inputElement && inputElement.getBoundingClientRect) {
       try {
         const rect = inputElement.getBoundingClientRect();
         // Only update if we have valid dimensions
         if (rect.width > 0 && rect.height > 0) {
-          customerDropdownPos.current = { 
+          customerDropdownPos.current = {
             top: rect.bottom + window.scrollY + 4,
-            left: rect.left + window.scrollX, 
-            width: rect.width 
+            left: rect.left + window.scrollX,
+            width: rect.width
           };
         }
       } catch (error) {
@@ -4086,7 +4096,7 @@ export default function AddInvoice() {
           customer_id: c.customer_id
         })));
       }
-      setCustomerSuggestions(dedupeCustomerSuggestions(Array.isArray(data)?data:[]));
+      setCustomerSuggestions(dedupeCustomerSuggestions(Array.isArray(data) ? data : []));
       if (Array.isArray(data) && data.length > 0) {
         setShowCustomerSuggestions(true);
         customerAnchorRef.current = 'name';
@@ -4114,7 +4124,7 @@ export default function AddInvoice() {
         params.append('include_membership', 'true');
         const resp = await ApiService.get(`/search-master-customer?${params.toString()}`);
         const data = (resp as any)?.data?.data || (resp as any)?.data || [];
-        const list = dedupeCustomerSuggestions(Array.isArray(data)?data:[]);
+        const list = dedupeCustomerSuggestions(Array.isArray(data) ? data : []);
         if (Array.isArray(list) && list.length > 0) {
           // Compute position using the explicit ref first, then show
           customerAnchorRef.current = field;
@@ -4132,7 +4142,7 @@ export default function AddInvoice() {
               width: rect.width,
             };
           }
-          setCustomerSuggestions(list); 
+          setCustomerSuggestions(list);
           setCustomerDropdownTick((t) => t + 1);
           setShowCustomerSuggestions(true);
         } else {
@@ -4145,7 +4155,7 @@ export default function AddInvoice() {
 
   const fetchWalletLedger = useCallback(async (customerId: number) => {
     if (!user?.account_code || !user?.retail_code) return;
-    
+
     setWalletLedgerLoading(true);
     try {
       const params = new URLSearchParams({
@@ -4154,10 +4164,10 @@ export default function AddInvoice() {
         retail_code: user.retail_code,
         limit: '50'
       });
-      
+
       const response = await ApiService.get(`/api/customer-wallet-ledger?${params.toString()}`);
-      const data = (response && typeof response === 'object' && 'data' in response) 
-        ? (response as any).data || [] 
+      const data = (response && typeof response === 'object' && 'data' in response)
+        ? (response as any).data || []
         : [];
       // Persist full ledger list for the dialog
       setWalletLedgerData(Array.isArray(data) ? data : []);
@@ -4282,7 +4292,7 @@ export default function AddInvoice() {
   const handleCustomerInputChange = (value: string) => {
     setNewInvoice(prev => ({ ...prev, customerName: value }));
     setSelectedCustomer(null);
-    if (value && invalid.customerName) setInvalid(prev=>({...prev, customerName:false}));
+    if (value && invalid.customerName) setInvalid(prev => ({ ...prev, customerName: false }));
     // Clear scanning complete flag to allow normal search when user manually types
     if (scanningComplete) setScanningComplete(false);
     // Clear gender when manually typing (not selecting from suggestions)
@@ -4331,10 +4341,10 @@ export default function AddInvoice() {
             };
             setCustomerDropdownTick((t) => t + 1);
           }
-        } catch {}
+        } catch { }
       }
     });
-    
+
     // Trigger row-aware search immediately to avoid initial-char positioning lag
     if (value && value.trim().length > 0) {
       if (customerSearchTimeout.current) window.clearTimeout(customerSearchTimeout.current);
@@ -4374,22 +4384,22 @@ export default function AddInvoice() {
 
     scanProcessingRef.current = true;
     lastScanRef.current = { code: normalized, ts: now };
-    
+
     try {
       // IMMEDIATELY set stop flag and close scanner to stop camera and prevent further scans
       scanStopRef.current = true;
       setScanOpen(false);
       setScanLoading(true);
       setScanningComplete(true);
-      
+
       // Clear any existing customer search timeouts to prevent interference
       if (customerSearchTimeout.current) {
         window.clearTimeout(customerSearchTimeout.current);
         customerSearchTimeout.current = undefined;
       }
-      
+
       // No-op
-      
+
       // Prefer exact match by membership_cardno; if not found, fallback to search endpoint
       const found = await loadCustomerByCard(normalized);
       if (found) return;
@@ -4422,22 +4432,22 @@ export default function AddInvoice() {
       setCustomers(prev => prev.map(row =>
         row.id === '1'
           ? {
-              ...row,
-              customer: String(customerId || row.customer || ''),
-              customerId: String(customerId || row.customerId || ''),
-              customerName: name || row.customerName,
-              customerPhone: phone || row.customerPhone,
-              customerGender: gender || row.customerGender,
-            }
+            ...row,
+            customer: String(customerId || row.customer || ''),
+            customerId: String(customerId || row.customerId || ''),
+            customerName: name || row.customerName,
+            customerPhone: phone || row.customerPhone,
+            customerGender: gender || row.customerGender,
+          }
           : row
       ));
-      setSelectedCustomer({ 
-        id: String(customerId), 
-        name, 
-        email: c.email || '', 
-        phone, 
-        totalVisits: Number((c as any).total_visits||0), 
-        lastVisit: String((c as any).last_visit||''),
+      setSelectedCustomer({
+        id: String(customerId),
+        name,
+        email: c.email || '',
+        phone,
+        totalVisits: Number((c as any).total_visits || 0),
+        lastVisit: String((c as any).last_visit || ''),
         visitCount: Number((c as any).customer_visitcnt || (c as any).total_visits || 0),
         customerCredit: Number((c as any).customer_credit || 0)
       });
@@ -4473,13 +4483,13 @@ export default function AddInvoice() {
       setCustomers(prev => prev.map(row =>
         row.id === '1'
           ? {
-              ...row,
-              customerMembershipId: membershipIdResolved || row.customerMembershipId || '',
-              customerBirthday: birthdayResolved || row.customerBirthday || '',
-              customerAnniversary: anniversaryResolved || row.customerAnniversary || '',
-              customerMembershipCardNo: cardResolved || row.customerMembershipCardNo || '',
-              customerAddress: addressResolved || row.customerAddress || '',
-            }
+            ...row,
+            customerMembershipId: membershipIdResolved || row.customerMembershipId || '',
+            customerBirthday: birthdayResolved || row.customerBirthday || '',
+            customerAnniversary: anniversaryResolved || row.customerAnniversary || '',
+            customerMembershipCardNo: cardResolved || row.customerMembershipCardNo || '',
+            customerAddress: addressResolved || row.customerAddress || '',
+          }
           : row
       ));
       // Apply membership if present
@@ -4506,7 +4516,7 @@ export default function AddInvoice() {
     const digits10 = String(value || '').replace(/\D+/g, '').slice(0, 10);
     setNewInvoice(prev => ({ ...prev, customerPhone: digits10 }));
     setSelectedCustomer(null);
-    if (digits10 && invalid.customerPhone) setInvalid(prev=>({...prev, customerPhone:false}));
+    if (digits10 && invalid.customerPhone) setInvalid(prev => ({ ...prev, customerPhone: false }));
     // Clear scanning complete flag to allow normal search when user manually types
     if (scanningComplete) setScanningComplete(false);
     // Clear gender when manually typing (not selecting from suggestions)
@@ -4553,10 +4563,10 @@ export default function AddInvoice() {
             };
             setCustomerDropdownTick((t) => t + 1);
           }
-        } catch {}
+        } catch { }
       }
     });
-    
+
     // Trigger row-aware phone search immediately to avoid initial-char positioning lag
     if (digits10 && digits10.trim().length > 0) {
       if (customerSearchTimeout.current) window.clearTimeout(customerSearchTimeout.current);
@@ -4586,7 +4596,7 @@ export default function AddInvoice() {
   }, [newInvoice.customerPhone, invalid.customerPhone]);
 
   const performCustomerSearchByPhone = useCallback(async (phoneQuery: string) => {
-    if (!phoneQuery || phoneQuery.trim().length === 0) { 
+    if (!phoneQuery || phoneQuery.trim().length === 0) {
       setCustomerSuggestions([]);
       setShowCustomerSuggestions(false);
       return;
@@ -4642,33 +4652,33 @@ export default function AddInvoice() {
     updateCustomer(activeCustomerRowId, 'customerPhone', phone);
     updateCustomer(activeCustomerRowId, 'visitCount', visitCount.toString());
     updateCustomer(activeCustomerRowId, 'creditPending', creditPending.toString());
-    
+
     // Try to get gender from suggestion first
-    const suggestionGender = (suggestion as any).gender || 
-                            (suggestion as any).customer_gender || 
-                            (suggestion as any).Gender || 
-                            (suggestion as any).GENDER ||
-                            (suggestion as any).sex ||
-                            (suggestion as any).SEX || '';
-    
+    const suggestionGender = (suggestion as any).gender ||
+      (suggestion as any).customer_gender ||
+      (suggestion as any).Gender ||
+      (suggestion as any).GENDER ||
+      (suggestion as any).sex ||
+      (suggestion as any).SEX || '';
+
     if (suggestionGender) {
       const normalizedGender = normalizeGender(suggestionGender);
       if (normalizedGender) {
         updateCustomer(activeCustomerRowId, 'customerGender', normalizedGender);
       }
     }
-    
+
     // If it's the first customer, also update main newInvoice state
     if (activeCustomerRowId === '1') {
       setNewInvoice(prev => ({ ...prev, customerName: name, customerPhone: phone }));
     }
-    
+
     // Populate moreDetails from suggestion data if available
     const suggestionBirthday = (suggestion as any).birthday_date || (suggestion as any).Birthday_date || (suggestion as any).birthday || '';
     const suggestionAnniversary = (suggestion as any).anniversary_date || (suggestion as any).Anniversary_date || (suggestion as any).anniversary || '';
     const suggestionCardNo = (suggestion as any).membership_cardno || (suggestion as any).Membership_cardno || (suggestion as any).card_no || '';
     const suggestionAddress = (suggestion as any).address || (suggestion as any).Address || (suggestion as any).customer_address || '';
-    
+
     setMoreDetails(prev => ({
       ...prev,
       membership_id: resolveMembershipId(membershipId) || prev.membership_id || '',
@@ -4677,55 +4687,55 @@ export default function AddInvoice() {
       membership_cardno: sTrim(suggestionCardNo) || prev.membership_cardno || '',
       address: sTrim(suggestionAddress) || prev.address || '',
     }));
-    
+
     // Since gender is not included in search results, fetch full customer details
     if (customerId && customerId !== '0' && customerId !== 0) {
       try {
         const acc = (user as any)?.account_code;
         const ret = (user as any)?.retail_code;
-        
+
         if (acc && ret) {
           // Fetch full customer details to get gender
           const customerDetails = await DataService.readData(['master_customer'], acc, ret);
-          
+
           // Handle different possible data structures
-          const customers = (customerDetails?.data as any)?.master_customer || 
-                          (customerDetails?.data as any) || 
-                          customerDetails || [];
-          
+          const customers = (customerDetails?.data as any)?.master_customer ||
+            (customerDetails?.data as any) ||
+            customerDetails || [];
+
           // Try multiple matching strategies
           let fullCustomer = null;
-          
+
           if (Array.isArray(customers)) {
             // Strategy 1: Match by customer_id
-            fullCustomer = customers.find((c: any) => 
+            fullCustomer = customers.find((c: any) =>
               String(c.customer_id || '') === String(customerId)
             );
-            
+
             // Strategy 2: Match by id if customer_id didn't work
             if (!fullCustomer) {
-              fullCustomer = customers.find((c: any) => 
+              fullCustomer = customers.find((c: any) =>
                 String(c.id || '') === String(customerId)
               );
             }
-            
+
             // Strategy 3: Match by any ID field
             if (!fullCustomer) {
-              fullCustomer = customers.find((c: any) => 
+              fullCustomer = customers.find((c: any) =>
                 String(c.customer_id || c.id || c.CUSTOMER_ID || c.ID || '') === String(customerId)
               );
             }
           }
-          
+
           if (fullCustomer) {
             // Try to get gender from full customer data
-            const genderFromCustomer = fullCustomer.gender || 
-                                      fullCustomer.customer_gender || 
-                                      fullCustomer.Gender || 
-                                      fullCustomer.GENDER ||
-                                      fullCustomer.sex ||
-                                      fullCustomer.SEX || '';
-            
+            const genderFromCustomer = fullCustomer.gender ||
+              fullCustomer.customer_gender ||
+              fullCustomer.Gender ||
+              fullCustomer.GENDER ||
+              fullCustomer.sex ||
+              fullCustomer.SEX || '';
+
             if (genderFromCustomer) {
               const normalizedGender = normalizeGender(genderFromCustomer);
               if (normalizedGender) {
@@ -4743,7 +4753,7 @@ export default function AddInvoice() {
             const cardNo = fullCustomer.membership_cardno || fullCustomer.Membership_cardno || fullCustomer.card_no || '';
             const address = fullCustomer.address || fullCustomer.Address || fullCustomer.customer_address || '';
             const customerMembershipId = fullCustomer.membership_id || fullCustomer.Membership_id || '';
-            
+
             setNewInvoice(prev => ({
               ...prev,
               customerBirthday: birthday || prev.customerBirthday,
@@ -4777,7 +4787,7 @@ export default function AddInvoice() {
       visitCount: Number(suggestion.customer_visitcnt || (suggestion as any).total_visits || 0),
       customerCredit: Number(suggestion.customer_credit || 0)
     });
-    
+
     // Check if membership data is available directly from the API response
     if (membershipId && suggestion.membership_membership_name && suggestion.membership_discount_percent !== undefined) {
       // Use membership data directly from customer search response
@@ -4790,38 +4800,38 @@ export default function AddInvoice() {
         price: 0, // Default value, not needed for discount application
         status: 1 // Default value, not needed for discount application
       };
-      
+
       setCustomerMembership(membershipData);
     } else {
       // Fallback to the existing membership lookup logic
       applyMembershipDiscount(membershipId);
     }
-    
+
     setShowCustomerSuggestions(false);
     setCustomerSelectedIndex(-1);
     // Focus on staff selection after customer selection
-    setTimeout(() => { 
+    setTimeout(() => {
       const staffSelect = document.querySelector('[data-staff-select] button') as HTMLButtonElement;
-      if (staffSelect) { 
-        staffSelect.focus(); 
+      if (staffSelect) {
+        staffSelect.focus();
       }
     }, 50);
   };
 
   const handleCustomerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (showCustomerSuggestions && customerSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setCustomerSelectedIndex(p => p < customerSuggestions.length-1 ? p+1 : 0); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); setCustomerSelectedIndex(p => p > 0 ? p-1 : customerSuggestions.length-1); }
-      else if (e.key === 'Enter') { e.preventDefault(); if (customerSelectedIndex >=0) selectCustomer(customerSuggestions[customerSelectedIndex]); else selectCustomer(customerSuggestions[0]); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setCustomerSelectedIndex(p => p < customerSuggestions.length - 1 ? p + 1 : 0); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setCustomerSelectedIndex(p => p > 0 ? p - 1 : customerSuggestions.length - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (customerSelectedIndex >= 0) selectCustomer(customerSuggestions[customerSelectedIndex]); else selectCustomer(customerSuggestions[0]); }
       else if (e.key === 'Escape') { setShowCustomerSuggestions(false); setCustomerSelectedIndex(-1); }
     }
   };
 
   const handleCustomerPhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (showCustomerSuggestions && customerSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setCustomerSelectedIndex(p => p < customerSuggestions.length-1 ? p+1 : 0); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); setCustomerSelectedIndex(p => p > 0 ? p-1 : customerSuggestions.length-1); }
-      else if (e.key === 'Enter') { e.preventDefault(); if (customerSelectedIndex >=0) selectCustomer(customerSuggestions[customerSelectedIndex]); else selectCustomer(customerSuggestions[0]); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setCustomerSelectedIndex(p => p < customerSuggestions.length - 1 ? p + 1 : 0); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setCustomerSelectedIndex(p => p > 0 ? p - 1 : customerSuggestions.length - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (customerSelectedIndex >= 0) selectCustomer(customerSuggestions[customerSelectedIndex]); else selectCustomer(customerSuggestions[0]); }
       else if (e.key === 'Escape') { setShowCustomerSuggestions(false); setCustomerSelectedIndex(-1); }
     }
   };
@@ -5018,19 +5028,28 @@ export default function AddInvoice() {
 
   const validateInvoice = () => {
     // Check if at least one customer has both name and phone
-    const hasValidCustomer = customers.some(customer => 
+    const hasValidCustomer = customers.some(customer =>
       sTrim(customer.customerName) && sTrim(customer.customerPhone)
     );
-    
+
     // For backward compatibility, also check the main newInvoice fields
     const hasName = !!sTrim(newInvoice.customerName) || hasValidCustomer;
     const hasPhone = !!sTrim(newInvoice.customerPhone) || hasValidCustomer;
     // Gender is mandatory: require gender for the primary customer (or any valid customer row)
-    const hasGenderForAnyValidCustomer = customers.some(customer => 
+    const hasGenderForAnyValidCustomer = customers.some(customer =>
       sTrim(customer.customerName) && sTrim(customer.customerPhone) && sTrim(customer.customerGender)
     );
     const hasGender = !!sTrim(newInvoice.customerGender) || hasGenderForAnyValidCustomer;
     const hasService = newInvoice.services.some((service) => service.name && service.price > 0);
+
+    // Validate Physical Stats (mandatory and within range)
+    const primaryCustomer = customers[0] || {};
+    const ageVal = parseInt(String(primaryCustomer.customerAge || '0'), 10);
+    const hasAge = ageVal >= 5 && ageVal <= 100;
+    const heightVal = parseFloat(String(primaryCustomer.customerHeight || '0'));
+    const hasHeight = heightVal >= 50 && heightVal <= 250;
+    const weightVal = parseFloat(String(primaryCustomer.customerWeight || '0'));
+    const hasWeight = weightVal >= 20 && weightVal <= 300;
 
     // TYPE UI row validation (ignore trailing blank row)
     let typeRowsValid = true;
@@ -5058,18 +5077,18 @@ export default function AddInvoice() {
       // Clear any stale row errors when not in TYPE mode
       if (Object.keys(typeRowErrors).length) setTypeRowErrors({});
     }
-    
+
     // Validate multiple payment modes
     const totalPaid = selectedPaymentModes.reduce((sum, p) => sum + p.amount, 0);
     const totalWithCredit = totalPaid + creditAmount;
     // Allow small tolerance due to rounding; treat nearest rupee as valid
     const paymentRounded = Math.round(totalWithCredit);
     const hasAnyPaymentMode = selectedPaymentModes.length > 0;
-    
+
     // Check if full amount is in credit (no payment modes needed)
     const isFullCredit = creditAmount > 0 && Math.round(creditAmount) === roundedTotal;
     const hasValidPayment = (hasAnyPaymentMode && paymentRounded === roundedTotal) || isFullCredit;
-    
+
     // Check if all line-items have staff assigned
     const validServices = newInvoice.services.filter(s => s.name && s.price > 0);
     const hasAllRequiredStaff = validServices.every((service) => {
@@ -5089,7 +5108,7 @@ export default function AddInvoice() {
       }
       return true;
     });
-    
+
     // Debug staff assignment validation
     if (!hasAllRequiredStaff) {
       console.log('🔍 VALIDATION DEBUG - Missing staff:', validServices
@@ -5138,6 +5157,9 @@ export default function AddInvoice() {
       customerName: !hasName,
       customerPhone: !hasPhone,
       customerGender: !hasGender,
+      customerAge: !hasAge,
+      customerHeight: !hasHeight,
+      customerWeight: !hasWeight,
       staff: !hasAllRequiredStaff,
       payment: !hasValidPayment,
       services: !hasService,
@@ -5168,18 +5190,18 @@ export default function AddInvoice() {
       }
     }
 
-    return hasName && hasPhone && hasGender && hasAllRequiredStaff && hasService && hasValidPayment && typeRowsValid;
+    return hasName && hasPhone && hasGender && hasAllRequiredStaff && hasService && hasValidPayment && typeRowsValid && hasAge && hasHeight && hasWeight;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || submitting) return;
-    
+
     // Check validation; if invalid, fields are highlighted and focus moves—no message
     if (!validateInvoice()) return;
-    
+
     setSubmitting(true);
-    
+
     try {
       // Check if full amount is in credit and ask for confirmation
       const isFullCredit = creditAmount > 0 && Math.round(creditAmount) === roundedTotal;
@@ -5188,7 +5210,7 @@ export default function AddInvoice() {
         setShowCreditConfirmation(true);
         return; // Wait for user confirmation in dialog
       }
-      
+
       // Proceed with actual submission
       await processSubmit(e, 'active');
     } catch (error) {
@@ -5201,7 +5223,7 @@ export default function AddInvoice() {
   const handleHoldInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || holdSubmitting) return;
-    
+
     // HOLD bills can be saved without customer details.
     // Only require at least one line item so the invoice isn't empty.
     const hasAnyLineItem = newInvoice.services.some(s => s.name && s.price > 0 && Number(s.quantity || 0) > 0);
@@ -5214,9 +5236,9 @@ export default function AddInvoice() {
       });
       return;
     }
-    
+
     setHoldSubmitting(true);
-    
+
     try {
       // Proceed with hold submission
       await processSubmit(e, 'hold');
@@ -5227,43 +5249,43 @@ export default function AddInvoice() {
     }
   };
 
-    const handleCancelInvoice = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!user || cancelSubmitting) return;
-      // Show confirmation dialog
-      setShowCancelConfirmation(true);
-    };
+  const handleCancelInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || cancelSubmitting) return;
+    // Show confirmation dialog
+    setShowCancelConfirmation(true);
+  };
 
-    const confirmCancelInvoice = async () => {
-      if (!user || cancelSubmitting) return;
-      const invoiceToCancel = (isEditMode && editId) || visitInvoiceId || null;
-      if (!invoiceToCancel) {
-        toast({ title: "No Invoice", description: "No existing invoice available to cancel.", variant: "destructive" });
-        setShowCancelConfirmation(false);
-        return;
-      }
+  const confirmCancelInvoice = async () => {
+    if (!user || cancelSubmitting) return;
+    const invoiceToCancel = (isEditMode && editId) || visitInvoiceId || null;
+    if (!invoiceToCancel) {
+      toast({ title: "No Invoice", description: "No existing invoice available to cancel.", variant: "destructive" });
+      setShowCancelConfirmation(false);
+      return;
+    }
 
-      setCancelSubmitting(true);
-      try {
-        const acc = (user as any)?.account_code;
-        const ret = (user as any)?.retail_code;
-        await InvoiceService.cancel(invoiceToCancel, acc, ret);
-        toast({ title: "Invoice Cancelled", description: `Invoice ${invoiceToCancel} marked cancelled.`, variant: "default" });
-        setShowCancelConfirmation(false);
-        // Redirect to billing list
-        navigate('/billing');
-      } catch (err) {
-        console.error('Error cancelling invoice:', err);
-        toast({ title: "Cancel Failed", description: "Failed to cancel invoice. Try again.", variant: "destructive" });
-      } finally {
-        setCancelSubmitting(false);
-      }
-    };
+    setCancelSubmitting(true);
+    try {
+      const acc = (user as any)?.account_code;
+      const ret = (user as any)?.retail_code;
+      await InvoiceService.cancel(invoiceToCancel, acc, ret);
+      toast({ title: "Invoice Cancelled", description: `Invoice ${invoiceToCancel} marked cancelled.`, variant: "default" });
+      setShowCancelConfirmation(false);
+      // Redirect to billing list
+      navigate('/billing');
+    } catch (err) {
+      console.error('Error cancelling invoice:', err);
+      toast({ title: "Cancel Failed", description: "Failed to cancel invoice. Try again.", variant: "destructive" });
+    } finally {
+      setCancelSubmitting(false);
+    }
+  };
 
   const processSubmit = async (e: React.FormEvent, status: 'active' | 'hold' = 'active') => {
-  // Use actual scoped account/retail codes; if missing, backend will likely reject
-  const acc = (user as any)?.account_code;
-  const ret = (user as any)?.retail_code;
+    // Use actual scoped account/retail codes; if missing, backend will likely reject
+    const acc = (user as any)?.account_code;
+    const ret = (user as any)?.retail_code;
     try {
       // Determine primary customer from the first customers row for consistency
       const primaryRow = (customers && customers.length > 0) ? customers[0] : null;
@@ -5305,11 +5327,11 @@ export default function AddInvoice() {
             const cid = parseInt(existing.customer_id ?? existing.CUSTOMER_ID ?? "0", 10);
             if (!Number.isNaN(cid) && cid > 0) {
               actualCustomerId = cid;
-              
+
               // Update existing customer with additional details if provided
-              const hasAdditionalDetails = moreDetails.membership_id || moreDetails.birthday_date || 
+              const hasAdditionalDetails = moreDetails.membership_id || moreDetails.birthday_date ||
                 moreDetails.anniversary_date || moreDetails.membership_cardno || moreDetails.address;
-              
+
               if (hasAdditionalDetails) {
                 try {
                   const updatePayload: any = {
@@ -5324,7 +5346,7 @@ export default function AddInvoice() {
                     ...(moreDetails.membership_cardno ? { membership_cardno: String(moreDetails.membership_cardno).trim() } : {}),
                     ...(moreDetails.address ? { address: String(moreDetails.address).trim() } : {}),
                   };
-                  
+
                   const updateRes: any = await DataService.updateData("master_customer", updatePayload);
                   if (updateRes?.success) {
                     console.log('Customer additional details updated successfully');
@@ -5354,14 +5376,14 @@ export default function AddInvoice() {
             }
 
             // Store full word (Male/Female/Other) per request; fallback to initial on truncation error.
-            const normalizedGender = (newInvoice.customerGender||'').trim().toLowerCase();
-            const genderFull = (()=>{
-              if (normalizedGender==='male' || normalizedGender==='m') return 'Male';
-              if (normalizedGender==='female' || normalizedGender==='f') return 'Female';
-              if (normalizedGender==='other' || normalizedGender==='o') return 'Other';
+            const normalizedGender = (newInvoice.customerGender || '').trim().toLowerCase();
+            const genderFull = (() => {
+              if (normalizedGender === 'male' || normalizedGender === 'm') return 'Male';
+              if (normalizedGender === 'female' || normalizedGender === 'f') return 'Female';
+              if (normalizedGender === 'other' || normalizedGender === 'o') return 'Other';
               return undefined;
             })();
-            
+
             const customerPayload: any = {
               customer_id: nextCustomerId,
               customer_name: sTrim(newInvoice.customerName),
@@ -5371,13 +5393,17 @@ export default function AddInvoice() {
               mobile_number: phone,
               account_code: acc,
               retail_code: ret,
-              ...(genderFull ? { gender: genderFull.slice(0,18) } : {}),
+              ...(genderFull ? { gender: genderFull.slice(0, 18) } : {}),
               // Additional customer details from the modal
               ...(moreDetails.membership_id ? { membership_id: String(moreDetails.membership_id).trim() } : {}),
               ...(moreDetails.birthday_date ? { birthday_date: moreDetails.birthday_date } : {}),
               ...(moreDetails.anniversary_date ? { anniversary_date: moreDetails.anniversary_date } : {}),
               ...(moreDetails.membership_cardno ? { membership_cardno: String(moreDetails.membership_cardno).trim() } : {}),
               ...(moreDetails.address ? { address: String(moreDetails.address).trim() } : {}),
+              // Physical stats
+              age: parseInt(String(customers[0]?.customerAge || '0'), 10) || undefined,
+              height_cm: parseFloat(String(customers[0]?.customerHeight || '0')) || undefined,
+              weight_kg: parseFloat(String(customers[0]?.customerWeight || '0')) || undefined,
               // Set default values for required fields
               visitcnt: 0,
               outstandingamt: 0,
@@ -5418,59 +5444,60 @@ export default function AddInvoice() {
       let membershipDiscountAmountOverall = 0;
 
       // Membership discount should apply ONLY to service lines (exclude packages/products)
-      const valid = newInvoice.services.filter(s=>s.name && s.price>0);
-      const grosses = valid.map(s=> s.price * s.quantity);
+      const valid = newInvoice.services.filter(s => s.name && s.price > 0);
+      const grosses = valid.map(s => s.price * s.quantity);
       const eligibleFlags = valid.map(s => {
         const sid = String((s as any).service_id || '');
         return !(sid.startsWith('pkg:') || sid.startsWith('inv:'));
       });
-      const grossSum = grosses.reduce((a,b)=>a+b,0);
-      const grossSumServices = grosses.reduce((sum, g, idx) => sum + (eligibleFlags[idx] ? g : 0), 0);
+      // Recalculate subtotal based on valid items only
+      const grossSum = valid.reduce((a, b) => a + (b.price * b.quantity), 0);
+      const grossSumServices = valid.reduce((sum, s, idx) => sum + (eligibleFlags[idx] ? s.price * s.quantity : 0), 0);
+      const subtotalLocal = grossSum;
 
       if (newInvoice.discountType === 'percentage') {
         const enteredPercent = Number(newInvoice.discount || 0); // user-entered extra/regular percent
         const additionalPercent = hasMembership ? Math.max(0, enteredPercent - membershipPercent) : enteredPercent;
-        regularDiscountAmountOverall = Number(((subtotal * additionalPercent) / 100).toFixed(2));
+        regularDiscountAmountOverall = Number(((subtotalLocal * additionalPercent) / 100).toFixed(2));
         membershipDiscountAmountOverall = hasMembership ? Number(((grossSumServices * membershipPercent) / 100).toFixed(2)) : 0;
       } else {
-        // Fixed: Discount textbox represents TOTAL discount (membership + extra)
-        const enteredAmountTotal = Math.min(Number(newInvoice.discount || 0) || 0, subtotal);
-        // Compute membership portion first, then convert total -> additional (never negative)
+        // Total discount represented by textbox
+        const enteredAmountTotal = Math.min(Number(newInvoice.discount || 0) || 0, subtotalLocal);
         membershipDiscountAmountOverall = hasMembership ? Number(((grossSumServices * membershipPercent) / 100).toFixed(2)) : 0;
         regularDiscountAmountOverall = Math.max(0, enteredAmountTotal - membershipDiscountAmountOverall);
       }
 
       // Proportionally allocate both discounts across all valid lines to keep tax base accurate
-      const alloc = (total:number) => {
-        if (!grossSum || total<=0) return grosses.map(()=>0);
-        const out = grosses.map(g=> Number(((g/grossSum)*total).toFixed(2)));
-        const diff = Number((total - out.reduce((a,b)=>a+b,0)).toFixed(2));
-        if (out.length) out[out.length-1] = Number((out[out.length-1] + diff).toFixed(2));
+      const alloc = (total: number) => {
+        if (!grossSum || total <= 0) return grosses.map(() => 0);
+        const out = grosses.map(g => Number(((g / grossSum) * total).toFixed(2)));
+        const diff = Number((total - out.reduce((a, b) => a + b, 0)).toFixed(2));
+        if (out.length) out[out.length - 1] = Number((out[out.length - 1] + diff).toFixed(2));
         return out;
       };
-      const allocEligible = (total:number, eligible:boolean[]) => {
-        if (!total || total<=0) return grosses.map(()=>0);
+      const allocEligible = (total: number, eligible: boolean[]) => {
+        if (!total || total <= 0) return grosses.map(() => 0);
         const eligibleSum = grosses.reduce((sum, g, idx) => sum + (eligible[idx] ? g : 0), 0);
-        if (!eligibleSum) return grosses.map(()=>0);
+        if (!eligibleSum) return grosses.map(() => 0);
         const out = grosses.map((g, idx) => Number((((eligible[idx] ? g : 0) / eligibleSum) * total).toFixed(2)));
-        const diff = Number((total - out.reduce((a,b)=>a+b,0)).toFixed(2));
-        if (out.length) out[out.length-1] = Number((out[out.length-1] + diff).toFixed(2));
+        const diff = Number((total - out.reduce((a, b) => a + b, 0)).toFixed(2));
+        if (out.length) out[out.length - 1] = Number((out[out.length - 1] + diff).toFixed(2));
         return out;
       };
       const regAlloc = alloc(regularDiscountAmountOverall);
       const memAlloc = allocEligible(membershipDiscountAmountOverall, eligibleFlags);
 
-      const lines = valid.map((s, idx)=>(() => {
+      const lines = valid.map((s, idx) => (() => {
         const lineGross = s.price * s.quantity;
         const vi = idx; // Using the same array, so index matches directly
-        const regDisc = vi>=0 ? (regAlloc[vi]||0) : 0;
-        const memDisc = vi>=0 ? (memAlloc[vi]||0) : 0;
+        const regDisc = vi >= 0 ? (regAlloc[vi] || 0) : 0;
+        const memDisc = vi >= 0 ? (memAlloc[vi] || 0) : 0;
         const appliedDiscountForTax = regDisc + memDisc;
         const lineTaxable = Math.max(lineGross - appliedDiscountForTax, 0);
         let cRate = 0, sRate = 0, iRate = 0;
         if (s.taxId) {
           const tx = masterTaxes.find(t => String(t.tax_id) === String(s.taxId) || String(t.id) === String(s.taxId));
-          if (tx) { cRate = Number(tx.cgst)||0; sRate = Number(tx.sgst)||0; iRate = Number(tx.igst)||0; }
+          if (tx) { cRate = Number(tx.cgst) || 0; sRate = Number(tx.sgst) || 0; iRate = Number(tx.igst) || 0; }
         }
         if ((cRate + sRate + iRate) === 0 && s.taxRate !== 0) { // fallback split, but respect explicit 0% tax
           const combined = (s.taxRate != null ? s.taxRate : newInvoice.tax) || 0;
@@ -5482,9 +5509,9 @@ export default function AddInvoice() {
         const sidStr = String((s as any).service_id || '');
         const sectionExempt = (sidStr.startsWith('inv:') && productsTaxExempted) || (sidStr.startsWith('pkg:') && packagesTaxExempted);
         const exemptAll = taxExempted || sectionExempt;
-        let total_cgst = exemptAll ? 0 : Number(((lineTaxable * cRate)/100).toFixed(2));
-        let total_sgst = exemptAll ? 0 : Number(((lineTaxable * sRate)/100).toFixed(2));
-        let total_igst = exemptAll ? 0 : Number(((lineTaxable * iRate)/100).toFixed(2));
+        let total_cgst = exemptAll ? 0 : Number(((lineTaxable * cRate) / 100).toFixed(2));
+        let total_sgst = exemptAll ? 0 : Number(((lineTaxable * sRate) / 100).toFixed(2));
+        let total_igst = exemptAll ? 0 : Number(((lineTaxable * iRate) / 100).toFixed(2));
         let tax_amount = Number((total_cgst + total_sgst + total_igst).toFixed(2));
         const grand_total = Number((lineTaxable + tax_amount).toFixed(2));
         return {
@@ -5512,12 +5539,12 @@ export default function AddInvoice() {
 
       // If lock is on and we have appointment tax summary, reallocate totals proportionally to lines
       if (lockToApptTax && apptTaxSummary && lines.length > 0) {
-        const sumTaxable = lines.reduce((s,l)=> s + Number(l.taxable_amount||0), 0);
+        const sumTaxable = lines.reduce((s, l) => s + Number(l.taxable_amount || 0), 0);
         if (sumTaxable > 0) {
-          const alloc = (total:number) => {
-            const raw = lines.map(l => Number((((l.taxable_amount||0) / sumTaxable) * (total||0)).toFixed(2)));
-            const diff = Number(((total||0) - raw.reduce((a,b)=>a+b,0)).toFixed(2));
-            if (raw.length) raw[raw.length-1] = Number((raw[raw.length-1] + diff).toFixed(2));
+          const alloc = (total: number) => {
+            const raw = lines.map(l => Number((((l.taxable_amount || 0) / sumTaxable) * (total || 0)).toFixed(2)));
+            const diff = Number(((total || 0) - raw.reduce((a, b) => a + b, 0)).toFixed(2));
+            if (raw.length) raw[raw.length - 1] = Number((raw[raw.length - 1] + diff).toFixed(2));
             return raw;
           };
           const cgAlloc = alloc(apptTaxSummary.cgst || 0);
@@ -5533,9 +5560,9 @@ export default function AddInvoice() {
         }
       }
       if (!lines.length) return;
-      
+
       // Use existing invoice ID for updates, generate new one for creates
-      const invoiceId = isEditMode && editId ? editId : `${Date.now()}${Math.floor(Math.random()*1000)}`;
+      const invoiceId = isEditMode && editId ? editId : `${Date.now()}${Math.floor(Math.random() * 1000)}`;
       // Only SERVICES should go into payload.lines (exclude packages and products)
       const serviceOnlyLines = lines.filter(l => {
         const sid = String(l.service_id || '');
@@ -5659,6 +5686,10 @@ export default function AddInvoice() {
               additional_notes: idx === 0 ? (String(newInvoice.notes || '').trim() || undefined) : undefined,
               // Flag to indicate if this transaction originated from an appointment
               from_appointment: fromAppt ? 1 : 0,
+              // Physical stats on header line
+              age: idx === 0 ? (parseInt(String(customers[0]?.customerAge || '0'), 10) || undefined) : undefined,
+              height_cm: idx === 0 ? (parseFloat(String(customers[0]?.customerHeight || '0')) || undefined) : undefined,
+              weight_kg: idx === 0 ? (parseFloat(String(customers[0]?.customerWeight || '0')) || undefined) : undefined,
               // Audit fields
               created_by: user?.username || 'system',
               updated_by: user?.username || 'system',
@@ -5685,6 +5716,10 @@ export default function AddInvoice() {
             customer_phone: (primaryPhone || selectedCustomer?.phone || undefined),
             customer_gender: (newInvoice.customerGender || undefined),
             additional_notes: (String(newInvoice.notes || '').trim() || undefined),
+            // Physical stats on header row (for single-line/header fallback)
+            age: parseInt(String(customers[0]?.customerAge || '0'), 10) || undefined,
+            height_cm: parseFloat(String(customers[0]?.customerHeight || '0')) || undefined,
+            weight_kg: parseFloat(String(customers[0]?.customerWeight || '0')) || undefined,
             from_appointment: fromAppt ? 1 : 0,
             created_by: user?.username || 'system',
             updated_by: user?.username || 'system',
@@ -5694,14 +5729,14 @@ export default function AddInvoice() {
 
       // Build package and inventory lines for dedicated tables (backend optional)
       try {
-        
+
         const bySid = new Map<string, Service>();
         valid.forEach(v => { if (v.service_id) bySid.set(String(v.service_id), v); });
         const package_lines = lines
           .map((l) => ({ line: l, sid: String(l.service_id || '') }))
           .filter((x) => {
             const isPackage = x.sid.startsWith('pkg:');
-            
+
             return isPackage;
           })
           .flatMap(({ line, sid }) => {
@@ -5756,14 +5791,14 @@ export default function AddInvoice() {
             });
           });
 
-        
-        
+
+
         // Build inventory_lines robustly from both transformed lines and raw selected services
         let inventory_lines = lines
           .map((l) => ({ line: l, sid: String(l.service_id || ''), service: l.service_id ? bySid.get(String(l.service_id)) : undefined }))
           .filter((x) => {
             const isInventory = x.sid.startsWith('inv:');
-            
+
             return isInventory;
           })
           .map(({ line, sid, service }) => {
@@ -5771,7 +5806,7 @@ export default function AddInvoice() {
             // Resolve staff for this product from the originating service or global selection
             const staffId = (service?.staffId || globalStaffId || '') as string;
             const staffName = staffId ? (employeeMap[staffId]?.employee_name || '') : '';
-            
+
             return {
               account_code: acc,
               retail_code: ret,
@@ -5806,7 +5841,7 @@ export default function AddInvoice() {
 
         // Fallback: if no inventory_lines were produced, derive directly from selected services
         if (!inventory_lines.length) {
-          
+
           const selectedServices = (newInvoice?.services || []).filter(s => String(s.service_id || '').startsWith('inv:'));
           inventory_lines = selectedServices.map(s => {
             const sid = String(s.service_id || '');
@@ -5874,7 +5909,7 @@ export default function AddInvoice() {
 
         // Always include package_lines so updates remove old rows when empty
         (payload as any).package_lines = package_lines;
-        
+
         // Always set inventory_lines, even if empty
         (payload as any).inventory_lines = inventory_lines;
         // Include customer_lines for backend processing or future storage
@@ -5882,64 +5917,64 @@ export default function AddInvoice() {
 
         // Do NOT synthesize inventory/package rows into `service_lines`.
         // Backend derives billable service rows from `package_lines` / `inventory_lines` when needed.
-        
+
         // Populate header totals from UI-computed values to match the displayed summary
         try {
           // UI shows Subtotal before discount but including markup.
           // Send that in `subtotal_amount`, while taxes and grand/rounded reflect post-discount.
-          const subtotal_ui = Number((subtotal).toFixed(2));
-          const subtotal_all = Number((taxableAmount).toFixed(2));
-          const cgst_all = Number((cgstTotal).toFixed(2));
-          const sgst_all = Number((sgstTotal).toFixed(2));
-          const igst_all = Number((igstTotal).toFixed(2));
-          const tax_all = Number((taxAmount).toFixed(2));
-          const grand_total_exact = Number((subtotal_all + tax_all).toFixed(2));
-          const grand_total_rounded = Math.round(grand_total_exact);
-          const round_off = Number((grand_total_rounded - grand_total_exact).toFixed(2));
+          // Recalculate summary totals from valid lines to ensure header consistency
+          const taxableAll = lines.reduce((sum, l: any) => sum + (l.taxable_amount || 0), 0);
+          const cgstAll = lines.reduce((sum, l: any) => sum + (l.total_cgst || 0), 0);
+          const sgstAll = lines.reduce((sum, l: any) => sum + (l.total_sgst || 0), 0);
+          const igstAll = lines.reduce((sum, l: any) => sum + (l.total_igst || 0), 0);
+          const taxAll = lines.reduce((sum, l: any) => sum + (l.tax_amount || 0), 0);
 
-          
+          const grandTotalExact = Number((taxableAll + taxAll).toFixed(2));
+          const grandTotalRounded = Math.round(grandTotalExact);
+          const roundOffLocal = Number((grandTotalRounded - grandTotalExact).toFixed(2));
 
           if (Array.isArray((payload as any).lines) && (payload as any).lines.length > 0) {
-            // Subtotal matches UI (before discount), taxes/grand/round reflect post-discount
-            (payload as any).lines[0].subtotal_amount = subtotal_ui;
-            (payload as any).lines[0].total_cgst = cgst_all;
-            (payload as any).lines[0].total_sgst = sgst_all;
-            (payload as any).lines[0].total_igst = igst_all;
-            (payload as any).lines[0].tax_amount_total = tax_all;
-            (payload as any).lines[0].grand_total = grand_total_rounded; // Now rounded integer
-            (payload as any).lines[0].round_off = round_off;
-            // Include discount and markup details for backend
-            (payload as any).lines[0].includes_markup_amount = Number((markupTotal).toFixed(2));
-            (payload as any).lines[0].extra_discount_percent = newInvoice.discountType === 'percentage' ? Number(additionalPercent) : 0;
-            (payload as any).lines[0].extra_discount_amount = Number((additionalDiscountAmountOverall).toFixed(2));
+            const header = (payload as any).lines[0];
+            header.subtotal_amount = Number(subtotalLocal.toFixed(2));
+            header.total_cgst = Number(cgstAll.toFixed(2));
+            header.total_sgst = Number(sgstAll.toFixed(2));
+            header.total_igst = Number(igstAll.toFixed(2));
+            header.tax_amount_total = Number(taxAll.toFixed(2));
+            header.grand_total = grandTotalRounded;
+            header.round_off = roundOffLocal;
+
+            // Audit and discount info
+            header.extra_discount_percent = newInvoice.discountType === 'percentage' ? Number(newInvoice.discount || 0) : 0;
+            header.extra_discount_amount = regularDiscountAmountOverall;
+            header.membership_discount_total = membershipDiscountAmountOverall;
           }
-        } catch (e) {
-          
+        } catch (err) {
+          console.error("Summary total calculation failed:", err);
         }
-      } catch (e) {
-        
+      } catch (err) {
+        console.error("Payload preparation error:", err);
       }
-      
+
       // Debug logging for staff assignment verification
-      
-      
-      
-      
-      
-      
+
+
+
+
+
+
       // Validate employee assignment by correlating lines to services array
       const employeesByService = (payload.service_lines || []).map((s, idx) => ({
         service: s.service_name,
         employee: payload.lines?.[idx]?.employee_id,
         hasEmployee: !!payload.lines?.[idx]?.employee_id
       }));
-      
-      
+
+
       // Validate that each line has unique employee_id where expected
       const linesWithEmployees = payload.lines.filter(l => l.employee_id);
-      
-      
-      const resp = isEditMode && editId 
+
+
+      const resp = isEditMode && editId
         ? await InvoiceService.update(editId, payload as any)
         : await InvoiceService.create(payload as any);
 
@@ -5964,11 +5999,11 @@ export default function AddInvoice() {
       } catch (_e) {
         // ignore
       }
-        
+
       // Log the response from backend
-      
-  // Removed creation/update response debug log
-      
+
+      // Removed creation/update response debug log
+
       // Show success toast based on status
       const actionText = status === 'hold' ? 'held' : (isEditMode ? 'updated' : 'created');
       const statusText = status === 'hold' ? ' (On Hold)' : '';
@@ -5980,16 +6015,16 @@ export default function AddInvoice() {
 
       // Prepare invoice data for potential printing
       // Use staff names from services - create service-to-staff mapping for detailed printing
-      
-      
+
+
       const staffNames = valid
         .filter(s => s.staffId && s.staffName)
         .map(s => s.staffName)
         .filter((name, index, arr) => arr.indexOf(name) === index); // unique names
       const staffName = staffNames.length > 0 ? staffNames.join(', ') : '';
-      
-      
-        
+
+
+
       const invoiceForPrint = {
         invoiceId,
         customerName: newInvoice.customerName || 'Walk-in Customer',
@@ -6065,7 +6100,7 @@ export default function AddInvoice() {
       }
     } catch (err) {
       console.error('Failed to save invoice', err);
-      
+
       // Show error toast instead of alert
       toast({
         title: "Error",
@@ -6104,7 +6139,7 @@ export default function AddInvoice() {
     setSelectedPaymentModes([]);
     setCreditAmount(0);
     setPreviousTotal(0);
-    
+
     // Reset additional customer details
     setMoreDetails({
       membership_id: '',
@@ -6113,17 +6148,17 @@ export default function AddInvoice() {
       membership_cardno: '',
       address: '',
     });
-    
+
     // Reset customer suggestions
     setCustomerSuggestions([]);
     setShowCustomerSuggestions(false);
     setCustomerSelectedIndex(-1);
-    
+
     // Reset service suggestions
     setShowSuggestions(null);
     setSuggestions([]);
     setSelectedSuggestionIndex(-1);
-    
+
     // Clear all refs
     serviceInputRefs.current = {};
     priceInputRefs.current = {};
@@ -6155,28 +6190,28 @@ export default function AddInvoice() {
 
     // Initialize printer
     commands.push(ESC, 0x40);
-    
+
     // Set character size to small and center alignment
     commands.push(ESC, 0x21, 0x00);
     commands.push(ESC, 0x61, 0x01);
-    
+
     // Header - Company name
     const header = "Techies Magnifier\n";
     commands.push(...Array.from(new TextEncoder().encode(header)));
-    
+
     // Address lines - center aligned
     const addressLine1 = "No 7, CTH Road, Modern city,\n";
     const addressLine2 = "Parrabilram-600072\n";
     commands.push(...Array.from(new TextEncoder().encode(addressLine1)));
     commands.push(...Array.from(new TextEncoder().encode(addressLine2)));
-    
+
     // Phone number
     const phoneStr = "Ph: +91 7418529631\n";
     commands.push(...Array.from(new TextEncoder().encode(phoneStr)));
-    
+
     // Separator line
     commands.push(...Array.from(new TextEncoder().encode("--------------------------------\n")));
-    
+
     // Invoice and date info - left align
     commands.push(ESC, 0x61, 0x00);
     const invoiceStr = `Invoice: ${invoiceData.invoiceId || 'INV-' + Date.now()}\n`;
@@ -6185,7 +6220,7 @@ export default function AddInvoice() {
     commands.push(...Array.from(new TextEncoder().encode(invoiceStr)));
     commands.push(...Array.from(new TextEncoder().encode(dateOnlyStr)));
     commands.push(...Array.from(new TextEncoder().encode(dateStr)));
-    
+
     // Customer info
     if (invoiceData.customerName && invoiceData.customerName !== 'Walk-in Customer') {
       const customerStr = `Customer: ${invoiceData.customerName}\n`;
@@ -6195,16 +6230,16 @@ export default function AddInvoice() {
       const phoneCustomerStr = `Phone: ${invoiceData.customerPhone}\n`;
       commands.push(...Array.from(new TextEncoder().encode(phoneCustomerStr)));
     }
-    
+
     // Staff info if available
     if (invoiceData.staffName) {
       const staffStr = `Staff: ${invoiceData.staffName}\n`;
       commands.push(...Array.from(new TextEncoder().encode(staffStr)));
     }
-    
+
     // Separator line
     commands.push(...Array.from(new TextEncoder().encode("--------------------------------\n")));
-    
+
     // Service items
     if (invoiceData.services && invoiceData.services.length > 0) {
       invoiceData.services.forEach((service: any) => {
@@ -6212,7 +6247,7 @@ export default function AddInvoice() {
         const qty = service.qty || service.quantity || 1;
         const price = service.unit_price || service.price || 0;
         const total = service.total || service.grand_total || (qty * price);
-        
+
         const serviceLine = `${serviceName}\n`;
         const qtyPriceText = `${qty} x Rs.${Number(price).toFixed(2)}`;
         const totalText = `Rs.${Number(total).toFixed(2)}`;
@@ -6222,63 +6257,63 @@ export default function AddInvoice() {
         commands.push(...Array.from(new TextEncoder().encode(qtyPriceLine)));
       });
     }
-    
+
     // Separator line
     commands.push(...Array.from(new TextEncoder().encode("--------------------------------\n")));
-    
+
     // Totals
     const subtotal = Number(invoiceData.subtotal || 0);
     const discount = Number(invoiceData.discount || 0);
     const tax = Number(invoiceData.tax || 0);
     const total = Number(invoiceData.total || 0);
-    
+
     const subtotalStr = `Subtotal:${' '.repeat(Math.max(0, 20 - 'Subtotal:'.length))}Rs.${subtotal.toFixed(2)}\n`;
     commands.push(...Array.from(new TextEncoder().encode(subtotalStr)));
-    
+
     if (discount > 0) {
       const discountStr = `Discount:${' '.repeat(Math.max(0, 20 - 'Discount:'.length))}-Rs.${discount.toFixed(2)}\n`;
       commands.push(...Array.from(new TextEncoder().encode(discountStr)));
     }
-    
+
     if (tax > 0) {
       const taxStr = `Tax:${' '.repeat(Math.max(0, 20 - 'Tax:'.length))}Rs.${tax.toFixed(2)}\n`;
       commands.push(...Array.from(new TextEncoder().encode(taxStr)));
     }
-    
+
     // Bold for total
     commands.push(ESC, 0x21, 0x08);
     const totalStr = `Total:${' '.repeat(Math.max(0, 20 - 'Total:'.length))}Rs.${total.toFixed(2)}\n`;
     commands.push(...Array.from(new TextEncoder().encode(totalStr)));
-    
+
     // Reset formatting and center align
     commands.push(ESC, 0x21, 0x00);
     commands.push(ESC, 0x61, 0x01);
-    
+
     commands.push(0x0A);
     const paymentStr = `Payment: ${(invoiceData.paymentMethod || 'cash').toUpperCase()}\n`;
     commands.push(...Array.from(new TextEncoder().encode(paymentStr)));
     commands.push(0x0A);
-    
+
     const thankYouStr = "Thank you for visiting!\n";
     const visitAgainStr = "Please visit again\n";
     commands.push(...Array.from(new TextEncoder().encode(thankYouStr)));
     commands.push(...Array.from(new TextEncoder().encode(visitAgainStr)));
-    
+
     // Separator line
     commands.push(...Array.from(new TextEncoder().encode("--------------------------------\n")));
-    
+
     // Powered by - small text
     commands.push(ESC, 0x21, 0x01); // Small font
     const poweredByStr = "Powered by GYM Pro\n";
     commands.push(...Array.from(new TextEncoder().encode(poweredByStr)));
-    
+
     // Reset formatting
     commands.push(ESC, 0x21, 0x00);
     commands.push(0x0A, 0x0A, 0x0A);
-    
+
     // Cut paper
     commands.push(GS, 0x56, 0x42, 0x00);
-    
+
     return new Uint8Array(commands);
   };
 
@@ -6290,7 +6325,7 @@ export default function AddInvoice() {
         console.log('Found global printer device:', device.name);
         return device;
       }
-      
+
       // Fallback to localStorage
       const stored = localStorage.getItem('connectedPrinter');
       if (stored) {
@@ -6299,7 +6334,7 @@ export default function AddInvoice() {
         // Note: We can't reconstruct BluetoothDevice from localStorage
         // User will need to reconnect if not in global state
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error getting printer connection:', error);
@@ -6311,7 +6346,7 @@ export default function AddInvoice() {
     let device: BluetoothDevice | null = null;
     try {
       device = getPrinterConnection();
-      
+
       if (!device) {
         toast({
           title: "Printer Not Connected",
@@ -6322,7 +6357,7 @@ export default function AddInvoice() {
       }
 
       console.log('Connecting to printer:', device.name);
-      
+
       // Ensure device is connected
       if (!device.gatt?.connected) {
         console.log('Reconnecting to printer...');
@@ -6350,7 +6385,7 @@ export default function AddInvoice() {
       if (!characteristic) {
         throw new Error('Printer characteristic not found');
       }
-      
+
       console.log('Sending print data in chunks...');
       const chunkSize = 20;
       for (let i = 0; i < data.length; i += chunkSize) {
@@ -6360,14 +6395,14 @@ export default function AddInvoice() {
       }
 
       console.log('Print data sent successfully!');
-      
+
       // Keep the connection alive by storing it back to global state
       (window as any).globalPrinterDevice = device;
-      
+
       return true;
     } catch (error) {
       console.error('Bluetooth print error:', error);
-      
+
       // Try to reconnect the device to global state if it exists
       if (device) {
         try {
@@ -6376,7 +6411,7 @@ export default function AddInvoice() {
           console.warn('Failed to restore printer connection:', e);
         }
       }
-      
+
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast({
         title: "Print Failed",
@@ -6391,15 +6426,15 @@ export default function AddInvoice() {
     try {
       if (shouldPrint && invoiceDataForPrint) {
         console.log('Printing invoice:', invoiceDataForPrint);
-        
+
         // Validate invoice data before printing
         if (!invoiceDataForPrint.invoiceId) {
           throw new Error('Invalid invoice data: missing invoice ID');
         }
-        
+
         const escPosData = generateEscPosCommands(invoiceDataForPrint);
         const success = await sendToBluetooth(escPosData);
-        
+
         if (success) {
           toast({
             title: "Print Successful",
@@ -6421,7 +6456,7 @@ export default function AddInvoice() {
       const shouldNavigateToAppointments = invoiceDataForPrint?.navigateToAppointments;
       setShowPrintConfirmation(false);
       setInvoiceDataForPrint(null);
-      
+
       // Navigate to appropriate page
       if (shouldNavigateToAppointments) {
         navigate('/appointments?billed=1');
@@ -6438,10 +6473,10 @@ export default function AddInvoice() {
     <form autoComplete="off" className="min-h-screen bg-slate-50" onSubmit={handleSubmit}>
       <div className="w-full px-1 lg:px-2">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          
+
           {/* Left column: Invoice Details */}
           <div className="lg:col-span-3 space-y-4">
-            
+
             {/* Customer & Date Section */}
             <Card className="border-0 bg-white rounded-none overflow-hidden">
               <CardHeader className="bg-transparent border-b border-slate-200 py-1.5 px-2">
@@ -6472,7 +6507,7 @@ export default function AddInvoice() {
                             <span className="truncate">
                               {globalStaffId
                                 ? (masterEmployees.find((e: any) => String(e.employee_id) === String(globalStaffId))
-                                    ?.employee_name || "Assign staff")
+                                  ?.employee_name || "Assign staff")
                                 : "No staff selected"}
                             </span>
                             <ChevronDown className="ml-2 h-4 w-4 opacity-60" />
@@ -6543,9 +6578,8 @@ export default function AddInvoice() {
                           <span className="text-[10px] sm:text-[11px] font-medium text-slate-700">WhatsApp:</span>
                         </div>
                         <span
-                          className={`text-[10px] sm:text-[11px] font-bold ${
-                            (providerCredits || 0) <= 0 ? "text-red-500" : "text-emerald-600"
-                          }`}
+                          className={`text-[10px] sm:text-[11px] font-bold ${(providerCredits || 0) <= 0 ? "text-red-500" : "text-emerald-600"
+                            }`}
                         >
                           {providerCredits !== null ? providerCredits.toLocaleString() : "..."}
                         </span>
@@ -6567,7 +6601,7 @@ export default function AddInvoice() {
                 {/* Multiple Customers Section */}
                 <div className="space-y-2">
                   {/* Column Headers */}
-                  <div className="grid gap-1.5 pb-1" style={{ gridTemplateColumns: '1.6fr 1.2fr 1fr 1fr 1.2fr auto' }}>
+                  <div className="grid gap-x-1.5 pb-1" style={{ gridTemplateColumns: '1.6fr 1.2fr 1fr 1fr 1.2fr auto' }}>
                     <div className="text-[10px] font-semibold text-slate-700">Customer Name <span className="text-red-500">*</span></div>
                     <div className="text-[10px] font-semibold text-slate-700">Phone Number <span className="text-red-500">*</span></div>
                     <div className="text-[10px] font-semibold text-slate-700">Gender <span className="text-red-500">*</span></div>
@@ -6575,7 +6609,7 @@ export default function AddInvoice() {
                     <div className="text-[10px] font-semibold text-slate-700">Credit Pending</div>
                     <div className="text-[10px] font-semibold text-slate-700">Action</div>
                   </div>
-                  
+
                   {/* Customer Rows */}
                   {customers.map((customer, index) => (
                     <div
@@ -6802,7 +6836,7 @@ export default function AddInvoice() {
                             console.log('📞 Phone input focused for customer:', customer.id, 'index:', index);
                             setActiveCustomerRowId(customer.id);
                             // Ensure ref is set before positioning
-                            customerPhoneRefs.current[customer.id] = customerPhoneRefs.current[customer.id] || 
+                            customerPhoneRefs.current[customer.id] = customerPhoneRefs.current[customer.id] ||
                               (index === 0 ? customerPhoneRef.current : null);
                             // Use requestAnimationFrame to ensure DOM is updated
                             requestAnimationFrame(() => {
@@ -6813,7 +6847,7 @@ export default function AddInvoice() {
                             console.log('🖱️ Phone input clicked for customer:', customer.id, 'index:', index);
                             setActiveCustomerRowId(customer.id);
                             // Ensure ref is set before positioning
-                            customerPhoneRefs.current[customer.id] = customerPhoneRefs.current[customer.id] || 
+                            customerPhoneRefs.current[customer.id] = customerPhoneRefs.current[customer.id] ||
                               (index === 0 ? customerPhoneRef.current : null);
                             requestAnimationFrame(() => {
                               updateDropdownPosition('phone');
@@ -6827,7 +6861,7 @@ export default function AddInvoice() {
                               if (showCustomerSuggestions && customerSuggestions.length > 0) {
                                 if (e.key === 'ArrowDown') {
                                   e.preventDefault();
-                                  setCustomerSelectedIndex(prev => 
+                                  setCustomerSelectedIndex(prev =>
                                     prev < customerSuggestions.length - 1 ? prev + 1 : prev
                                   );
                                 } else if (e.key === 'ArrowUp') {
@@ -6852,8 +6886,8 @@ export default function AddInvoice() {
                         )}
                       </div>
                       <div className="space-y-0.5">
-                        <Select 
-                          value={customer.customerGender} 
+                        <Select
+                          value={customer.customerGender}
                           onValueChange={(v) => {
                             updateCustomer(customer.id, 'customerGender', v);
                             if (index === 0) {
@@ -6865,7 +6899,7 @@ export default function AddInvoice() {
                           }}
                         >
                           <SelectTrigger className={`h-7 rounded text-[10px] ${invalid.customerGender && index === 0 ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-blue-500'}`}>
-                            <SelectValue placeholder="Select gender"/>
+                            <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="male">Male</SelectItem>
@@ -6914,11 +6948,10 @@ export default function AddInvoice() {
                           <Input
                             value={`₹${parseFloat(customer.creditPending || '0').toFixed(2)}`}
                             readOnly
-                            className={`h-7 py-0.5 pr-7 rounded text-[10px] font-semibold cursor-pointer ${
-                              parseFloat(customer.creditPending || '0') > 0
-                                ? 'bg-red-50 border-red-200 text-red-800'
-                                : 'bg-amber-50 border-amber-200 text-amber-800'
-                            }`}
+                            className={`h-7 py-0.5 pr-7 rounded text-[10px] font-semibold cursor-pointer ${parseFloat(customer.creditPending || '0') > 0
+                              ? 'bg-red-50 border-red-200 text-red-800'
+                              : 'bg-amber-50 border-amber-200 text-amber-800'
+                              }`}
                             onClick={() => {
                               if (customer.customerName && customer.customerPhone) {
                                 // For now, use the legacy selectedCustomer for wallet ledger
@@ -6952,9 +6985,9 @@ export default function AddInvoice() {
                             variant="outline"
                             size="sm"
                             onClick={addCustomer}
-                            disabled={customers.some(c => !String(c.customerName||'').trim() || !String(c.customerPhone||'').trim() || !String(c.customerGender||'').trim())}
+                            disabled={customers.some(c => !String(c.customerName || '').trim() || !String(c.customerPhone || '').trim() || !String(c.customerGender || '').trim())}
                             className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 disabled:text-slate-400 disabled:hover:bg-transparent"
-                            title={customers.some(c => !String(c.customerName||'').trim() || !String(c.customerPhone||'').trim() || !String(c.customerGender||'').trim()) ? "Fill current rows first" : "Add another customer"}
+                            title={customers.some(c => !String(c.customerName || '').trim() || !String(c.customerPhone || '').trim() || !String(c.customerGender || '').trim()) ? "Fill current rows first" : "Add another customer"}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -6973,6 +7006,49 @@ export default function AddInvoice() {
                           </Button>
                         </div>
                       )}
+
+                      {/* Second row for Physical Stats - perfectly aligned under Name & Phone */}
+                      <div className="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-x-1.5 mt-2" style={{ gridColumn: '1 / 3' }}>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-semibold text-slate-700 px-0.5">Age (years) <span className="text-red-500">*</span></label>
+                          <Input
+                            type="number"
+                            value={customer.customerAge}
+                            onChange={(e) => {
+                              updateCustomer(customer.id, 'customerAge', e.target.value);
+                              if (index === 0) setInvalid(prev => ({ ...prev, customerAge: false }));
+                            }}
+                            placeholder="Enter age"
+                            className={`h-7 py-0.5 rounded text-[10px] focus:ring-0 ${invalid.customerAge && index === 0 ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-blue-500'}`}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-semibold text-slate-700 px-0.5">Height (cm) <span className="text-red-500">*</span></label>
+                          <Input
+                            type="number"
+                            value={customer.customerHeight}
+                            onChange={(e) => {
+                              updateCustomer(customer.id, 'customerHeight', e.target.value);
+                              if (index === 0) setInvalid(prev => ({ ...prev, customerHeight: false }));
+                            }}
+                            placeholder="Enter height (cm)"
+                            className={`h-7 py-0.5 rounded text-[10px] focus:ring-0 ${invalid.customerHeight && index === 0 ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-blue-500'}`}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-semibold text-slate-700 px-0.5">Weight (kg) <span className="text-red-500">*</span></label>
+                          <Input
+                            type="number"
+                            value={customer.customerWeight}
+                            onChange={(e) => {
+                              updateCustomer(customer.id, 'customerWeight', e.target.value);
+                              if (index === 0) setInvalid(prev => ({ ...prev, customerWeight: false }));
+                            }}
+                            placeholder="Enter weight (kg)"
+                            className={`h-7 py-0.5 rounded text-[10px] focus:ring-0 ${invalid.customerWeight && index === 0 ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-blue-500'}`}
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -7364,278 +7440,350 @@ export default function AddInvoice() {
                 </CardContent>
               </Card>
             )}
-            
+
             {/* Services Section */}
             {!isTypeBillingUI && enableServicesOnBilling && (
-            <Card className="border-0 bg-white rounded-none overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 border-b border-slate-200 py-1.5 px-2">
-                <CardTitle className="text-xs font-semibold text-slate-800">
-                  {/* Removed highlighted informational box as requested */}
-                  <div className="flex items-center w-full gap-2 flex-nowrap overflow-x-auto">
-                    <div className="flex items-center shrink-0">
-                      <Scissors className="h-3.5 w-3.5 text-purple-600 mr-1.5" />
-                      Services
-                    </div>
+              <Card className="border-0 bg-white rounded-none overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 border-b border-slate-200 py-1.5 px-2">
+                  <CardTitle className="text-xs font-semibold text-slate-800">
+                    {/* Removed highlighted informational box as requested */}
+                    <div className="flex items-center w-full gap-2 flex-nowrap overflow-x-auto">
+                      <div className="flex items-center shrink-0">
+                        <Scissors className="h-3.5 w-3.5 text-purple-600 mr-1.5" />
+                        Services
+                      </div>
 
-                    <div className="flex items-center gap-2 ml-auto shrink-0">
-                    {/* Gender Filter */}
-                    <div className="w-28 shrink-0">
-                      <Select
-                        value={genderFilter || "__all__"}
-                        onValueChange={(value) => setGenderFilter(value === "__all__" ? "" : value)}
-                      >
-                        <SelectTrigger className="h-8 text-xs border-slate-300 focus:border-purple-400">
-                          <SelectValue placeholder="Filter by Gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__all__">All Genders</SelectItem>
-                          {availableGenders.filter(gender => gender && gender.trim()).map((gender) => (
-                            <SelectItem key={gender} value={gender}>
-                              {gender}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="w-40 shrink-0">
-                      <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            role="combobox"
-                            aria-expanded={categoryFilterOpen}
-                            className="h-8 w-full justify-between text-xs border-slate-300 focus:border-purple-400"
+                      <div className="flex items-center gap-2 ml-auto shrink-0">
+                        {/* Gender Filter */}
+                        <div className="w-28 shrink-0">
+                          <Select
+                            value={genderFilter || "__all__"}
+                            onValueChange={(value) => setGenderFilter(value === "__all__" ? "" : value)}
                           >
-                            <span className="truncate">
-                              {categoryFilter ? (categoryNameMap[categoryFilter] || categoryFilter) : "All Categories"}
-                            </span>
-                            <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search category..." className="h-9" />
-                            <CommandList>
-                              <CommandEmpty>No categories found.</CommandEmpty>
-                              <CommandGroup>
-                                <CommandItem
-                                  value="All Categories"
-                                  onSelect={() => {
-                                    setCategoryFilter("");
-                                    setCategoryFilterOpen(false);
-                                  }}
-                                >
-                                  All Categories
-                                </CommandItem>
-                                {availableCategories
-                                  .filter((category) => category && String(category).trim())
-                                  .map((category) => {
-                                    const label = categoryNameMap[category] || category;
-                                    return (
-                                      <CommandItem
-                                        key={category}
-                                        value={`${label} ${category}`}
-                                        onSelect={() => {
-                                          setCategoryFilter(String(category));
-                                          setCategoryFilterOpen(false);
-                                        }}
-                                      >
-                                        <span className="truncate">{label}</span>
-                                      </CommandItem>
-                                    );
-                                  })}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                            <SelectTrigger className="h-8 text-xs border-slate-300 focus:border-purple-400">
+                              <SelectValue placeholder="Filter by Gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__all__">All Genders</SelectItem>
+                              {availableGenders.filter(gender => gender && gender.trim()).map((gender) => (
+                                <SelectItem key={gender} value={gender}>
+                                  {gender}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    {/* Search Bar */}
-                    <div className="relative w-48 sm:w-56 md:w-64 shrink-0">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                      <input
-                        type="text"
-                        value={serviceSearch}
-                        onChange={(e) => setUnifiedSearch(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Escape') setUnifiedSearch(''); }}
-                        placeholder=""
-                        className="w-full h-8 pl-7 pr-6 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-purple-400"
-                      />
-                      {serviceSearch && (
-                        <button
-                          type="button"
-                          aria-label="Clear search"
-                          onClick={() => setUnifiedSearch("")}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-slate-100 text-slate-500"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowOnlySelected(v => !v)}
-                      className={`h-8 px-2 ${showOnlySelected ? 'bg-purple-100 border-purple-300 text-purple-700' : ''}`}
-                      title="Show only selected services"
-                    >
-                      <ListChecks className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openMasterCreate('service')}
-                      className="h-8 w-8 p-0"
-                      title="Create new service"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-
-                    {/* Divider and Tax toggle */}
-                    <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                      <button
-                        type="button"
-                        onClick={() => setTaxExempted(!taxExempted)}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${taxExempted ? 'bg-blue-600' : 'bg-gray-300'}`}
-                      >
-                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${taxExempted ? 'translate-x-5' : 'translate-x-1'}`} />
-                      </button>
-                      <Label className="text-xs font-medium text-gray-700">No Tax</Label>
-                      {/* Removed '(No Tax)' label per request */}
-                    </div>
-                    </div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-2">
-                {/* Product Selection Grid */}
-                <div className="mb-3">
-                  <div
-                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-[24rem] overflow-y-auto ${invalid.services ? 'ring-2 ring-red-400 rounded p-1' : ''}`}
-                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
-                  >
-                    {filteredServices.map((service) => {
-                      const existingService = newInvoice.services.find(s => s.service_id === service.service_id);
-                      return (
-                        <div
-                          key={service.id}
-                          onClick={() => {
-                            if (serviceGestureConsumedRef.current) return;
-                            handleProductSelect(service);
-                          }}
-                          draggable
-                          onDragStart={(e) => {
-                            serviceGestureConsumedRef.current = true;
-                            serviceDragIdRef.current = service.id;
-                            try {
-                              e.dataTransfer.effectAllowed = 'move';
-                              e.dataTransfer.setData('text/plain', String(service.id));
-                            } catch {
-                              // ignore
-                            }
-                          }}
-                          onDragOver={(e) => {
-                            // Allow drop
-                            e.preventDefault();
-                            try {
-                              e.dataTransfer.dropEffect = 'move';
-                            } catch {
-                              // ignore
-                            }
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const srcIdStr = (() => {
-                              try {
-                                return e.dataTransfer.getData('text/plain');
-                              } catch {
-                                return '';
-                              }
-                            })();
-                            const srcId = Number(srcIdStr || serviceDragIdRef.current || 0);
-                            if (!srcId || srcId === service.id) return;
-                            moveServiceBefore(srcId, service.id);
-                          }}
-                          onDragEnd={() => {
-                            serviceDragIdRef.current = null;
-                            serviceGestureConsumedRef.current = false;
-                          }}
-                          onTouchStart={(e) => handleServiceTouchStart(e, service)}
-                          onTouchEnd={(e) => handleServiceTouchEnd(e, service)}
-                          onTouchCancel={() => { serviceTouchRef.current = null; }}
-                          className={`p-1.5 border rounded transition-all cursor-pointer select-none ${
-                            existingService 
-                              ? 'border-purple-400 bg-purple-100 ring-1 ring-purple-200' 
-                              : 'border-gray-200 hover:border-purple-300'
-                          }`}
-                          style={{ minHeight: '70px' }}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div 
-                              className="text-xs font-medium text-gray-900 flex-1 pr-2 whitespace-normal break-words"
-                              title={service.service_name}
-                            >
-                              {service.service_name}
-                            </div>
-                            
-                            {/* Gender Info - Top Right */}
-                            <div className="flex-shrink-0">
-                              {service.preferred_gender && (
-                                <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${
-                                  service.preferred_gender === 'Male' ? 'bg-cyan-100 text-cyan-700' :
-                                  service.preferred_gender === 'Female' ? 'bg-pink-100 text-pink-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {service.preferred_gender}
+                        <div className="w-40 shrink-0">
+                          <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                role="combobox"
+                                aria-expanded={categoryFilterOpen}
+                                className="h-8 w-full justify-between text-xs border-slate-300 focus:border-purple-400"
+                              >
+                                <span className="truncate">
+                                  {categoryFilter ? (categoryNameMap[categoryFilter] || categoryFilter) : "All Categories"}
                                 </span>
-                              )}
+                                <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search category..." className="h-9" />
+                                <CommandList>
+                                  <CommandEmpty>No categories found.</CommandEmpty>
+                                  <CommandGroup>
+                                    <CommandItem
+                                      value="All Categories"
+                                      onSelect={() => {
+                                        setCategoryFilter("");
+                                        setCategoryFilterOpen(false);
+                                      }}
+                                    >
+                                      All Categories
+                                    </CommandItem>
+                                    {availableCategories
+                                      .filter((category) => category && String(category).trim())
+                                      .map((category) => {
+                                        const label = categoryNameMap[category] || category;
+                                        return (
+                                          <CommandItem
+                                            key={category}
+                                            value={`${label} ${category}`}
+                                            onSelect={() => {
+                                              setCategoryFilter(String(category));
+                                              setCategoryFilterOpen(false);
+                                            }}
+                                          >
+                                            <span className="truncate">{label}</span>
+                                          </CommandItem>
+                                        );
+                                      })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative w-48 sm:w-56 md:w-64 shrink-0">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={serviceSearch}
+                            onChange={(e) => setUnifiedSearch(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Escape') setUnifiedSearch(''); }}
+                            placeholder=""
+                            className="w-full h-8 pl-7 pr-6 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-purple-400"
+                          />
+                          {serviceSearch && (
+                            <button
+                              type="button"
+                              aria-label="Clear search"
+                              onClick={() => setUnifiedSearch("")}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-slate-100 text-slate-500"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowOnlySelected(v => !v)}
+                          className={`h-8 px-2 ${showOnlySelected ? 'bg-purple-100 border-purple-300 text-purple-700' : ''}`}
+                          title="Show only selected services"
+                        >
+                          <ListChecks className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openMasterCreate('service')}
+                          className="h-8 w-8 p-0"
+                          title="Create new service"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+
+                        {/* Divider and Tax toggle */}
+                        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => setTaxExempted(!taxExempted)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${taxExempted ? 'bg-blue-600' : 'bg-gray-300'}`}
+                          >
+                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${taxExempted ? 'translate-x-5' : 'translate-x-1'}`} />
+                          </button>
+                          <Label className="text-xs font-medium text-gray-700">No Tax</Label>
+                          {/* Removed '(No Tax)' label per request */}
+                        </div>
+                      </div>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  {/* Product Selection Grid */}
+                  <div className="mb-3">
+                    <div
+                      className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-[24rem] overflow-y-auto ${invalid.services ? 'ring-2 ring-red-400 rounded p-1' : ''}`}
+                      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
+                    >
+                      {filteredServices.map((service) => {
+                        const existingService = newInvoice.services.find(s => s.service_id === service.service_id);
+                        return (
+                          <div
+                            key={service.id}
+                            onClick={() => {
+                              if (serviceGestureConsumedRef.current) return;
+                              handleProductSelect(service);
+                            }}
+                            draggable
+                            onDragStart={(e) => {
+                              serviceGestureConsumedRef.current = true;
+                              serviceDragIdRef.current = service.id;
+                              try {
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setData('text/plain', String(service.id));
+                              } catch {
+                                // ignore
+                              }
+                            }}
+                            onDragOver={(e) => {
+                              // Allow drop
+                              e.preventDefault();
+                              try {
+                                e.dataTransfer.dropEffect = 'move';
+                              } catch {
+                                // ignore
+                              }
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const srcIdStr = (() => {
+                                try {
+                                  return e.dataTransfer.getData('text/plain');
+                                } catch {
+                                  return '';
+                                }
+                              })();
+                              const srcId = Number(srcIdStr || serviceDragIdRef.current || 0);
+                              if (!srcId || srcId === service.id) return;
+                              moveServiceBefore(srcId, service.id);
+                            }}
+                            onDragEnd={() => {
+                              serviceDragIdRef.current = null;
+                              serviceGestureConsumedRef.current = false;
+                            }}
+                            onTouchStart={(e) => handleServiceTouchStart(e, service)}
+                            onTouchEnd={(e) => handleServiceTouchEnd(e, service)}
+                            onTouchCancel={() => { serviceTouchRef.current = null; }}
+                            className={`p-1.5 border rounded transition-all cursor-pointer select-none ${existingService
+                              ? 'border-purple-400 bg-purple-100 ring-1 ring-purple-200'
+                              : 'border-gray-200 hover:border-purple-300'
+                              }`}
+                            style={{ minHeight: '70px' }}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div
+                                className="text-xs font-medium text-gray-900 flex-1 pr-2 whitespace-normal break-words"
+                                title={service.service_name}
+                              >
+                                {service.service_name}
+                              </div>
+
+                              {/* Gender Info - Top Right */}
+                              <div className="flex-shrink-0">
+                                {service.preferred_gender && (
+                                  <span className={`px-1 py-0.5 rounded text-[9px] font-medium ${service.preferred_gender === 'Male' ? 'bg-cyan-100 text-cyan-700' :
+                                    service.preferred_gender === 'Female' ? 'bg-pink-100 text-pink-700' :
+                                      'bg-gray-100 text-gray-700'
+                                    }`}>
+                                    {service.preferred_gender}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          
-                          {existingService ? (
-                            // Selected: show price, qty, and inline staff assignment
-                            <div className="flex flex-col gap-2">
+
+                            {existingService ? (
+                              // Selected: show price, qty, and inline staff assignment
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); openPriceEditor(existingService.id, existingService.price ?? service.price); }}
+                                    className="inline-flex items-center gap-1 text-sm font-semibold text-purple-600 hover:underline focus:outline-none"
+                                    title="Edit price"
+                                  >
+                                    ₹{(existingService.price ?? service.price)?.toLocaleString?.() || '0'}
+                                    <Pencil className="h-3 w-3 opacity-70" />
+                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const next = Math.max(0, (existingService.quantity || 0) - 1);
+                                        if (next === 0) {
+                                          removeService(existingService.id);
+                                        } else {
+                                          updateService(existingService.id, "quantity", next);
+                                        }
+                                      }}
+                                      className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                      aria-label="Decrease"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="text-xs font-medium min-w-[1.25rem] text-center">
+                                      {existingService.quantity}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); updateService(existingService.id, "quantity", (existingService.quantity || 0) + 1); }}
+                                      className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                      aria-label="Increase"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="min-w-0">
+                                  {(() => {
+                                    const qty = Math.max(1, Number(existingService.quantity || 1));
+                                    const baseAssignments = Array.isArray(existingService.staffAssignments) && existingService.staffAssignments.length > 0
+                                      ? existingService.staffAssignments
+                                      : (existingService.staffId ? [{ staffId: existingService.staffId, staffName: existingService.staffName }] : []);
+
+                                    return (
+                                      <div className="flex flex-col gap-1">
+                                        {Array.from({ length: qty }).map((_, idx) => {
+                                          const assignedStaffId = (baseAssignments[idx]?.staffId ?? (idx === 0 ? existingService.staffId : '')) as any;
+                                          const isMissing = !assignedStaffId;
+
+                                          return (
+                                            <div key={idx} className="flex items-center gap-2 min-w-0">
+                                              {qty > 1 && (
+                                                <div className="text-[10px] text-slate-600 shrink-0 w-10">Staff {idx + 1}</div>
+                                              )}
+                                              <div className="min-w-0 flex-1">
+                                                <Select
+                                                  value={String(assignedStaffId || "")}
+                                                  onValueChange={(value) => {
+                                                    updateServiceStaff(existingService.id, value, idx);
+                                                  }}
+                                                >
+                                                  <SelectTrigger
+                                                    className={`h-7 text-[11px] w-full max-w-full min-w-0 whitespace-nowrap overflow-hidden ${isMissing && invalid.staff ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-purple-400'}`}
+                                                  >
+                                                    <SelectValue placeholder={qty > 1 ? `Select ${idx + 1}` : "Assign staff"} />
+                                                  </SelectTrigger>
+                                                  <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                                                    {masterEmployees.map((employee) => (
+                                                      <SelectItem key={employee.id} value={String(employee.employee_id)} className="truncate">
+                                                        <div className="truncate">{employee.employee_name}</div>
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                                {/* HSN selection removed per request */}
+                              </div>
+                            ) : (
+                              // Not selected: replace "Click to add" with compact qty stepper (no expansion)
                               <div className="flex items-center justify-between">
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); openPriceEditor(existingService.id, existingService.price ?? service.price); }}
-                                  className="inline-flex items-center gap-1 text-sm font-semibold text-purple-600 hover:underline focus:outline-none"
-                                  title="Edit price"
-                                >
-                                  ₹{(existingService.price ?? service.price)?.toLocaleString?.() || '0'}
-                                  <Pencil className="h-3 w-3 opacity-70" />
-                                </button>
+                                <span className="text-sm font-semibold text-purple-600">
+                                  ₹{Number(service.price || 0).toLocaleString()}
+                                </span>
                                 <div className="flex items-center gap-1">
                                   <button
                                     type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const next = Math.max(0, (existingService.quantity || 0) - 1);
-                                      if (next === 0) {
-                                        removeService(existingService.id);
-                                      } else {
-                                        updateService(existingService.id, "quantity", next);
-                                      }
-                                    }}
-                                    className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                    className="h-7 w-7 flex items-center justify-center bg-slate-50 rounded-md text-sm font-bold text-slate-300 cursor-default"
                                     aria-label="Decrease"
+                                    tabIndex={-1}
                                   >
                                     −
                                   </button>
-                                  <span className="text-xs font-medium min-w-[1.25rem] text-center">
-                                    {existingService.quantity}
-                                  </span>
+                                  <span className="text-xs font-medium min-w-[1.25rem] text-center">0</span>
                                   <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); updateService(existingService.id, "quantity", (existingService.quantity || 0) + 1); }}
+                                    onClick={(e) => { e.stopPropagation(); handleProductSelect(service); }}
                                     className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
                                     aria-label="Increase"
                                   >
@@ -7643,611 +7791,535 @@ export default function AddInvoice() {
                                   </button>
                                 </div>
                               </div>
-                              <div className="min-w-0">
-                                {(() => {
-                                  const qty = Math.max(1, Number(existingService.quantity || 1));
-                                  const baseAssignments = Array.isArray(existingService.staffAssignments) && existingService.staffAssignments.length > 0
-                                    ? existingService.staffAssignments
-                                    : (existingService.staffId ? [{ staffId: existingService.staffId, staffName: existingService.staffName }] : []);
-
-                                  return (
-                                    <div className="flex flex-col gap-1">
-                                      {Array.from({ length: qty }).map((_, idx) => {
-                                        const assignedStaffId = (baseAssignments[idx]?.staffId ?? (idx === 0 ? existingService.staffId : '')) as any;
-                                        const isMissing = !assignedStaffId;
-
-                                        return (
-                                          <div key={idx} className="flex items-center gap-2 min-w-0">
-                                            {qty > 1 && (
-                                              <div className="text-[10px] text-slate-600 shrink-0 w-10">Staff {idx + 1}</div>
-                                            )}
-                                            <div className="min-w-0 flex-1">
-                                              <Select
-                                                value={String(assignedStaffId || "")}
-                                                onValueChange={(value) => {
-                                                  updateServiceStaff(existingService.id, value, idx);
-                                                }}
-                                              >
-                                                <SelectTrigger
-                                                  className={`h-7 text-[11px] w-full max-w-full min-w-0 whitespace-nowrap overflow-hidden ${isMissing && invalid.staff ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-purple-400'}`}
-                                                >
-                                                  <SelectValue placeholder={qty > 1 ? `Select ${idx + 1}` : "Assign staff"} />
-                                                </SelectTrigger>
-                                                <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
-                                                  {masterEmployees.map((employee) => (
-                                                    <SelectItem key={employee.id} value={String(employee.employee_id)} className="truncate">
-                                                      <div className="truncate">{employee.employee_name}</div>
-                                                    </SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                              {/* HSN selection removed per request */}
-                            </div>
-                          ) : (
-                            // Not selected: replace "Click to add" with compact qty stepper (no expansion)
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-semibold text-purple-600">
-                                ₹{Number(service.price || 0).toLocaleString()}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  className="h-7 w-7 flex items-center justify-center bg-slate-50 rounded-md text-sm font-bold text-slate-300 cursor-default"
-                                  aria-label="Decrease"
-                                  tabIndex={-1}
-                                >
-                                  −
-                                </button>
-                                <span className="text-xs font-medium min-w-[1.25rem] text-center">0</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); handleProductSelect(service); }}
-                                  className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                  aria-label="Increase"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {filteredServices.length === 0 && (
-                    <div className="text-xs text-slate-500 px-1 py-2 text-center">
-                      {showOnlySelected
-                        ? "No selected services to show"
-                        : (categoryFilter || genderFilter || serviceSearch)
-                          ? "No services match the selected filters"
-                          : "No services found"
-                      }
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
+                    {filteredServices.length === 0 && (
+                      <div className="text-xs text-slate-500 px-1 py-2 text-center">
+                        {showOnlySelected
+                          ? "No selected services to show"
+                          : (categoryFilter || genderFilter || serviceSearch)
+                            ? "No services match the selected filters"
+                            : "No services found"
+                        }
+                      </div>
+                    )}
+                  </div>
 
-                {/* Selected Services section removed per request; inline staff assignment is now inside each selected card above */}
+                  {/* Selected Services section removed per request; inline staff assignment is now inside each selected card above */}
 
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             )}
 
             {/* Packages Section */}
             {!isTypeBillingUI && enablePackagesOnBilling && (
-            <Card className="border-0 bg-white rounded-none overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-slate-200 py-1.5 px-2 cursor-pointer" onClick={() => setPackagesOpen(v => !v)}>
-                <CardTitle className="text-xs font-semibold text-slate-800">
-                  <div className="flex items-center w-full gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setPackagesOpen(v => !v); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setPackagesOpen(v => !v); } }}
-                      aria-expanded={packagesOpen}
-                      className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-teal-100 text-teal-700"
-                      title={packagesOpen ? 'Collapse' : 'Expand'}
-                    >
-                      {packagesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </button>
-                    <div className="flex items-center">
-                      <Package className="h-3.5 w-3.5 text-teal-600 mr-1.5" />
-                      Packages
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto" onClick={(e) => e.stopPropagation()}>
-                      {/* Right-aligned search matching Services style */}
-                      <div className="relative w-48 sm:w-56 md:w-64">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                        <input
-                          type="text"
-                          value={packageSearch}
-                          onChange={(e) => setUnifiedSearch(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Escape') setUnifiedSearch(''); }}
-                          placeholder=""
-                          className="w-full h-8 pl-7 pr-6 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-teal-500"
-                        />
-                        {packageSearch && (
-                          <button
-                            type="button"
-                            aria-label="Clear search"
-                            onClick={() => setUnifiedSearch("")}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-slate-100 text-slate-500"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      {/* Package filter buttons */}
-                      {/* Package filter buttons */}
-                      <Button
+              <Card className="border-0 bg-white rounded-none overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-slate-200 py-1.5 px-2 cursor-pointer" onClick={() => setPackagesOpen(v => !v)}>
+                  <CardTitle className="text-xs font-semibold text-slate-800">
+                    <div className="flex items-center w-full gap-2">
+                      <button
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowOnlySelectedPackages(v => !v)}
-                        className={`h-8 px-2 ${showOnlySelectedPackages ? 'bg-teal-100 border-teal-300 text-teal-700' : ''}`}
-                        title="Show only selected packages"
+                        onClick={(e) => { e.stopPropagation(); setPackagesOpen(v => !v); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setPackagesOpen(v => !v); } }}
+                        aria-expanded={packagesOpen}
+                        className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-teal-100 text-teal-700"
+                        title={packagesOpen ? 'Collapse' : 'Expand'}
                       >
-                        <ListChecks className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openMasterCreate('package')}
-                        className="h-8 w-8 p-0"
-                        title="Create new package"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      {/* Divider and Packages Tax toggle */}
-                      <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                        <button
-                          type="button"
-                          onClick={togglePackagesTaxExempt}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${packagesTaxExempted ? 'bg-teal-600' : 'bg-gray-300'}`}
-                        >
-                          <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${packagesTaxExempted ? 'translate-x-5' : 'translate-x-1'}`} />
-                        </button>
-                        <Label className="text-xs font-medium text-gray-700">No Tax</Label>
-                        {/* Removed '(No Tax)' label per request */}
+                        {packagesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </button>
+                      <div className="flex items-center">
+                        <Package className="h-3.5 w-3.5 text-teal-600 mr-1.5" />
+                        Packages
                       </div>
-                    </div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              {packagesOpen && (
-              <CardContent className="p-2">
-                {/* Package Selection Grid */}
-                <div className="mb-3">
-                  <div
-                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-[24rem] overflow-y-auto`}
-                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
-                  >
-                    {filteredPackages.map((pkg) => {
-                      const existingPackage = newInvoice.services.find(s => String(s.service_id) === `pkg:${String(pkg.package_id)}`);
-                      return (
-                        <div
-                          key={pkg.id}
-                          onClick={() => handlePackageSelect(pkg)}
-                          className={`p-1.5 border rounded transition-all cursor-pointer select-none ${
-                            existingPackage 
-                              ? 'border-teal-400 bg-teal-100 ring-1 ring-teal-200' 
-                              : 'border-gray-200 hover:border-teal-300'
-                          }`}
-                          style={{ minHeight: '70px' }}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div 
-                              className="text-xs font-medium text-gray-900 flex-1 pr-2 whitespace-normal break-words"
-                              title={pkg.package_name}
+                      <div className="flex items-center gap-2 ml-auto" onClick={(e) => e.stopPropagation()}>
+                        {/* Right-aligned search matching Services style */}
+                        <div className="relative w-48 sm:w-56 md:w-64">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={packageSearch}
+                            onChange={(e) => setUnifiedSearch(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Escape') setUnifiedSearch(''); }}
+                            placeholder=""
+                            className="w-full h-8 pl-7 pr-6 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-teal-500"
+                          />
+                          {packageSearch && (
+                            <button
+                              type="button"
+                              aria-label="Clear search"
+                              onClick={() => setUnifiedSearch("")}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-slate-100 text-slate-500"
                             >
-                              {pkg.package_name}
-                            </div>
-                          </div>
-                          
-                          {existingPackage ? (
-                            // Selected: show price, qty, and inline staff assignment
-                            <div className="flex flex-col gap-2">
-                              <div className="flex items-center justify-between">
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); openPriceEditor(existingPackage.id, existingPackage.price ?? pkg.package_price); }}
-                                  className="inline-flex items-center gap-1 text-sm font-semibold text-teal-600 hover:underline focus:outline-none"
-                                  title="Edit price"
-                                >
-                                  ₹{(existingPackage.price ?? pkg.package_price)?.toLocaleString?.() || '0'}
-                                  <Pencil className="h-3 w-3 opacity-70" />
-                                </button>
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const next = Math.max(0, (existingPackage.quantity || 0) - 1);
-                                      if (next === 0) {
-                                        removeService(existingPackage.id);
-                                      } else {
-                                        updateService(existingPackage.id, "quantity", next);
-                                      }
-                                    }}
-                                    className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                    aria-label="Decrease"
-                                  >
-                                    −
-                                  </button>
-                                  <span className="text-xs font-medium min-w-[1.25rem] text-center">
-                                    {existingPackage.quantity}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); updateService(existingPackage.id, "quantity", (existingPackage.quantity || 0) + 1); }}
-                                    className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                    aria-label="Increase"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="min-w-0">
-                                {(() => {
-                                  const qty = Math.max(1, Number(existingPackage.quantity || 1));
-                                  const baseAssignments = Array.isArray(existingPackage.staffAssignments) && existingPackage.staffAssignments.length > 0
-                                    ? existingPackage.staffAssignments
-                                    : (existingPackage.staffId ? [{ staffId: existingPackage.staffId, staffName: existingPackage.staffName }] : []);
-
-                                  return (
-                                    <div className="flex flex-col gap-1">
-                                      {Array.from({ length: qty }).map((_, idx) => {
-                                        const assignedStaffId = (baseAssignments[idx]?.staffId ?? (idx === 0 ? existingPackage.staffId : '')) as any;
-                                        const isMissing = !assignedStaffId;
-
-                                        return (
-                                          <div key={idx} className="flex items-center gap-2 min-w-0">
-                                            {qty > 1 && (
-                                              <div className="text-[10px] text-slate-600 shrink-0 w-10">Staff {idx + 1}</div>
-                                            )}
-                                            <div className="min-w-0 flex-1">
-                                              <Select
-                                                value={String(assignedStaffId || "")}
-                                                onValueChange={(value) => {
-                                                  updateServiceStaff(existingPackage.id, value, idx);
-                                                }}
-                                              >
-                                                <SelectTrigger className={`h-7 text-[11px] w-full max-w-full min-w-0 whitespace-nowrap overflow-hidden ${isMissing && invalid.staff ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-teal-400'}`}>
-                                                  <SelectValue placeholder={qty > 1 ? `Select ${idx + 1}` : "Assign staff"} />
-                                                </SelectTrigger>
-                                                <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
-                                                  {masterEmployees.map((employee) => (
-                                                    <SelectItem key={employee.id} value={String(employee.employee_id)} className="truncate">
-                                                      <div className="truncate">{employee.employee_name}</div>
-                                                    </SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          ) : (
-                            // Not selected: replace "Click to add" with compact qty stepper (no expansion)
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-semibold text-teal-600">
-                                ₹{pkg.package_price?.toLocaleString() || '0'}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  className="h-7 w-7 flex items-center justify-center bg-slate-50 rounded-md text-sm font-bold text-slate-300 cursor-default"
-                                  aria-label="Decrease"
-                                  tabIndex={-1}
-                                >
-                                  −
-                                </button>
-                                <span className="text-xs font-medium min-w-[1.25rem] text-center">0</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); handlePackageSelect(pkg); }}
-                                  className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                  aria-label="Increase"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                  {filteredPackages.length === 0 && (
-                    <div className="text-xs text-slate-500 px-1 py-2 text-center">
-                      {showOnlySelectedPackages
-                        ? "No selected packages to show"
-                        : (packageSearch && packageSearch.trim().length > 0)
-                          ? "No packages match the search"
-                          : "No packages found"
-                      }
+                        {/* Package filter buttons */}
+                        {/* Package filter buttons */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowOnlySelectedPackages(v => !v)}
+                          className={`h-8 px-2 ${showOnlySelectedPackages ? 'bg-teal-100 border-teal-300 text-teal-700' : ''}`}
+                          title="Show only selected packages"
+                        >
+                          <ListChecks className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openMasterCreate('package')}
+                          className="h-8 w-8 p-0"
+                          title="Create new package"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        {/* Divider and Packages Tax toggle */}
+                        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                          <button
+                            type="button"
+                            onClick={togglePackagesTaxExempt}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${packagesTaxExempted ? 'bg-teal-600' : 'bg-gray-300'}`}
+                          >
+                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${packagesTaxExempted ? 'translate-x-5' : 'translate-x-1'}`} />
+                          </button>
+                          <Label className="text-xs font-medium text-gray-700">No Tax</Label>
+                          {/* Removed '(No Tax)' label per request */}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-              )}
-            </Card>
+                  </CardTitle>
+                </CardHeader>
+                {packagesOpen && (
+                  <CardContent className="p-2">
+                    {/* Package Selection Grid */}
+                    <div className="mb-3">
+                      <div
+                        className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-[24rem] overflow-y-auto`}
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
+                      >
+                        {filteredPackages.map((pkg) => {
+                          const existingPackage = newInvoice.services.find(s => String(s.service_id) === `pkg:${String(pkg.package_id)}`);
+                          return (
+                            <div
+                              key={pkg.id}
+                              onClick={() => handlePackageSelect(pkg)}
+                              className={`p-1.5 border rounded transition-all cursor-pointer select-none ${existingPackage
+                                ? 'border-teal-400 bg-teal-100 ring-1 ring-teal-200'
+                                : 'border-gray-200 hover:border-teal-300'
+                                }`}
+                              style={{ minHeight: '70px' }}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div
+                                  className="text-xs font-medium text-gray-900 flex-1 pr-2 whitespace-normal break-words"
+                                  title={pkg.package_name}
+                                >
+                                  {pkg.package_name}
+                                </div>
+                              </div>
+
+                              {existingPackage ? (
+                                // Selected: show price, qty, and inline staff assignment
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex items-center justify-between">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); openPriceEditor(existingPackage.id, existingPackage.price ?? pkg.package_price); }}
+                                      className="inline-flex items-center gap-1 text-sm font-semibold text-teal-600 hover:underline focus:outline-none"
+                                      title="Edit price"
+                                    >
+                                      ₹{(existingPackage.price ?? pkg.package_price)?.toLocaleString?.() || '0'}
+                                      <Pencil className="h-3 w-3 opacity-70" />
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const next = Math.max(0, (existingPackage.quantity || 0) - 1);
+                                          if (next === 0) {
+                                            removeService(existingPackage.id);
+                                          } else {
+                                            updateService(existingPackage.id, "quantity", next);
+                                          }
+                                        }}
+                                        className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                        aria-label="Decrease"
+                                      >
+                                        −
+                                      </button>
+                                      <span className="text-xs font-medium min-w-[1.25rem] text-center">
+                                        {existingPackage.quantity}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); updateService(existingPackage.id, "quantity", (existingPackage.quantity || 0) + 1); }}
+                                        className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                        aria-label="Increase"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="min-w-0">
+                                    {(() => {
+                                      const qty = Math.max(1, Number(existingPackage.quantity || 1));
+                                      const baseAssignments = Array.isArray(existingPackage.staffAssignments) && existingPackage.staffAssignments.length > 0
+                                        ? existingPackage.staffAssignments
+                                        : (existingPackage.staffId ? [{ staffId: existingPackage.staffId, staffName: existingPackage.staffName }] : []);
+
+                                      return (
+                                        <div className="flex flex-col gap-1">
+                                          {Array.from({ length: qty }).map((_, idx) => {
+                                            const assignedStaffId = (baseAssignments[idx]?.staffId ?? (idx === 0 ? existingPackage.staffId : '')) as any;
+                                            const isMissing = !assignedStaffId;
+
+                                            return (
+                                              <div key={idx} className="flex items-center gap-2 min-w-0">
+                                                {qty > 1 && (
+                                                  <div className="text-[10px] text-slate-600 shrink-0 w-10">Staff {idx + 1}</div>
+                                                )}
+                                                <div className="min-w-0 flex-1">
+                                                  <Select
+                                                    value={String(assignedStaffId || "")}
+                                                    onValueChange={(value) => {
+                                                      updateServiceStaff(existingPackage.id, value, idx);
+                                                    }}
+                                                  >
+                                                    <SelectTrigger className={`h-7 text-[11px] w-full max-w-full min-w-0 whitespace-nowrap overflow-hidden ${isMissing && invalid.staff ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-teal-400'}`}>
+                                                      <SelectValue placeholder={qty > 1 ? `Select ${idx + 1}` : "Assign staff"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                                                      {masterEmployees.map((employee) => (
+                                                        <SelectItem key={employee.id} value={String(employee.employee_id)} className="truncate">
+                                                          <div className="truncate">{employee.employee_name}</div>
+                                                        </SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                              ) : (
+                                // Not selected: replace "Click to add" with compact qty stepper (no expansion)
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-semibold text-teal-600">
+                                    ₹{pkg.package_price?.toLocaleString() || '0'}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      className="h-7 w-7 flex items-center justify-center bg-slate-50 rounded-md text-sm font-bold text-slate-300 cursor-default"
+                                      aria-label="Decrease"
+                                      tabIndex={-1}
+                                    >
+                                      −
+                                    </button>
+                                    <span className="text-xs font-medium min-w-[1.25rem] text-center">0</span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handlePackageSelect(pkg); }}
+                                      className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                      aria-label="Increase"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {filteredPackages.length === 0 && (
+                        <div className="text-xs text-slate-500 px-1 py-2 text-center">
+                          {showOnlySelectedPackages
+                            ? "No selected packages to show"
+                            : (packageSearch && packageSearch.trim().length > 0)
+                              ? "No packages match the search"
+                              : "No packages found"
+                          }
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
             )}
 
             {/* Inventory Section */}
             {!isTypeBillingUI && enableInventoryOnBilling && (
-            <Card className="border-0 bg-white rounded-none overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-slate-200 py-1.5 px-2 cursor-pointer" onClick={() => setProductsOpen(v => !v)}>
-                <CardTitle className="text-xs font-semibold text-slate-800">
-                  <div className="flex items-center w-full gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setProductsOpen(v => !v); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setProductsOpen(v => !v); } }}
-                      aria-expanded={productsOpen}
-                      className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-amber-100 text-amber-700"
-                      title={productsOpen ? 'Collapse' : 'Expand'}
-                    >
-                      {productsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </button>
-                    <div className="flex items-center">
-                      <ShoppingBag className="h-3.5 w-3.5 text-amber-600 mr-1.5" />
-                      Inventory
-                    </div>
-                    <div className="flex items-center gap-2 ml-auto" onClick={(e) => e.stopPropagation()}>
-                      <div className="w-40 shrink-0">
-                        <Popover open={productCategoryFilterOpen} onOpenChange={setProductCategoryFilterOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
+              <Card className="border-0 bg-white rounded-none overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-slate-200 py-1.5 px-2 cursor-pointer" onClick={() => setProductsOpen(v => !v)}>
+                  <CardTitle className="text-xs font-semibold text-slate-800">
+                    <div className="flex items-center w-full gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setProductsOpen(v => !v); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setProductsOpen(v => !v); } }}
+                        aria-expanded={productsOpen}
+                        className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-amber-100 text-amber-700"
+                        title={productsOpen ? 'Collapse' : 'Expand'}
+                      >
+                        {productsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </button>
+                      <div className="flex items-center">
+                        <ShoppingBag className="h-3.5 w-3.5 text-amber-600 mr-1.5" />
+                        Inventory
+                      </div>
+                      <div className="flex items-center gap-2 ml-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="w-40 shrink-0">
+                          <Popover open={productCategoryFilterOpen} onOpenChange={setProductCategoryFilterOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                role="combobox"
+                                aria-expanded={productCategoryFilterOpen}
+                                className="h-8 w-full justify-between text-xs border-slate-300 focus:border-amber-400"
+                                title="Filter by category"
+                              >
+                                <span className="truncate">
+                                  {productCategoryFilter
+                                    ? (categoryNameMap[String(productCategoryFilter)] || String(productCategoryFilter))
+                                    : "All Categories"}
+                                </span>
+                                <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search category..." className="h-9" />
+                                <CommandList>
+                                  <CommandEmpty>No categories found.</CommandEmpty>
+                                  <CommandGroup>
+                                    <CommandItem
+                                      value="All Categories"
+                                      onSelect={() => {
+                                        setProductCategoryFilter("");
+                                        setProductCategoryFilterOpen(false);
+                                      }}
+                                    >
+                                      All Categories
+                                    </CommandItem>
+                                    {availableProductCategories.map((category) => {
+                                      const label = categoryNameMap[category] || category;
+                                      return (
+                                        <CommandItem
+                                          key={category}
+                                          value={`${label} ${category}`}
+                                          onSelect={() => {
+                                            setProductCategoryFilter(String(category));
+                                            setProductCategoryFilterOpen(false);
+                                          }}
+                                        >
+                                          <span className="truncate">{label}</span>
+                                        </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        {/* Search (after category) */}
+                        <div className="relative w-48 sm:w-56 md:w-64">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={productSearch}
+                            onChange={(e) => setUnifiedSearch(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Escape') setUnifiedSearch(''); }}
+                            placeholder=""
+                            className="w-full h-8 pl-7 pr-6 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-amber-500"
+                          />
+                          {productSearch && (
+                            <button
                               type="button"
-                              variant="outline"
-                              size="sm"
-                              role="combobox"
-                              aria-expanded={productCategoryFilterOpen}
-                              className="h-8 w-full justify-between text-xs border-slate-300 focus:border-amber-400"
-                              title="Filter by category"
+                              aria-label="Clear search"
+                              onClick={() => setUnifiedSearch("")}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-slate-100 text-slate-500"
                             >
-                              <span className="truncate">
-                                {productCategoryFilter
-                                  ? (categoryNameMap[String(productCategoryFilter)] || String(productCategoryFilter))
-                                  : "All Categories"}
-                              </span>
-                              <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                            <Command>
-                              <CommandInput placeholder="Search category..." className="h-9" />
-                              <CommandList>
-                                <CommandEmpty>No categories found.</CommandEmpty>
-                                <CommandGroup>
-                                  <CommandItem
-                                    value="All Categories"
-                                    onSelect={() => {
-                                      setProductCategoryFilter("");
-                                      setProductCategoryFilterOpen(false);
-                                    }}
-                                  >
-                                    All Categories
-                                  </CommandItem>
-                                  {availableProductCategories.map((category) => {
-                                    const label = categoryNameMap[category] || category;
-                                    return (
-                                      <CommandItem
-                                        key={category}
-                                        value={`${label} ${category}`}
-                                        onSelect={() => {
-                                          setProductCategoryFilter(String(category));
-                                          setProductCategoryFilterOpen(false);
-                                        }}
-                                      >
-                                        <span className="truncate">{label}</span>
-                                      </CommandItem>
-                                    );
-                                  })}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-
-                      {/* Search (after category) */}
-                      <div className="relative w-48 sm:w-56 md:w-64">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                        <input
-                          type="text"
-                          value={productSearch}
-                          onChange={(e) => setUnifiedSearch(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Escape') setUnifiedSearch(''); }}
-                          placeholder=""
-                          className="w-full h-8 pl-7 pr-6 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-amber-500"
-                        />
-                        {productSearch && (
-                          <button
-                            type="button"
-                            aria-label="Clear search"
-                            onClick={() => setUnifiedSearch("")}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded hover:bg-slate-100 text-slate-500"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowOnlySelectedProducts(v => !v)}
-                        className={`h-8 px-2 ${showOnlySelectedProducts ? 'bg-amber-100 border-amber-300 text-amber-700' : ''}`}
-                        title="Show only selected inventory"
-                      >
-                        <ListChecks className="h-4 w-4" />
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openMasterCreate('inventory')}
-                        className="h-8 w-8 p-0"
-                        title="Create new inventory item"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                        <button
-                          type="button"
-                          onClick={toggleProductsTaxExempt}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${productsTaxExempted ? 'bg-orange-600' : 'bg-gray-300'}`}
-                        >
-                          <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${productsTaxExempted ? 'translate-x-5' : 'translate-x-1'}`} />
-                        </button>
-                        <Label className="text-xs font-medium text-gray-700">No Tax</Label>
-                        {/* Removed '(No Tax)' label per request */}
-                      </div>
-                    </div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              {productsOpen && (
-              <CardContent className="p-2">
-                <div className="mb-3">
-                  <div
-                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-[24rem] overflow-y-auto`}
-                    style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
-                  >
-                    {filteredProducts.map((prod) => {
-                      const existing = newInvoice.services.find(s => String(s.service_id) === `inv:${String(prod.id)}`);
-                      return (
-                        <div
-                          key={prod.id}
-                          onClick={() => handleInventorySelect(prod)}
-                          className={`p-1.5 border rounded transition-all cursor-pointer select-none ${
-                            existing ? 'border-amber-400 bg-amber-100 ring-1 ring-amber-200' : 'border-gray-200 hover:border-amber-300'
-                          }`}
-                          style={{ minHeight: '70px' }}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="text-xs font-medium text-gray-900 flex-1 pr-2 whitespace-normal break-words" title={prod.item_name}>
-                              {prod.item_name}
-                            </div>
-                          </div>
-
-                          {existing ? (
-                            <div className="flex flex-col gap-2">
-                              <div className="flex items-center justify-between">
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); openPriceEditor(existing.id, existing.price ?? prod.selling_price); }}
-                                  className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 hover:underline focus:outline-none"
-                                  title="Edit price"
-                                >
-                                  ₹{(existing.price ?? prod.selling_price)?.toLocaleString?.() || '0'}
-                                  <Pencil className="h-3 w-3 opacity-70" />
-                                </button>
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const next = Math.max(0, (existing.quantity || 0) - 1);
-                                      if (next === 0) {
-                                        removeService(existing.id);
-                                      } else {
-                                        updateService(existing.id, "quantity", next);
-                                      }
-                                    }}
-                                    className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                    aria-label="Decrease"
-                                  >
-                                    −
-                                  </button>
-                                  <span className="text-xs font-medium min-w-[1.25rem] text-center">{existing.quantity}</span>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); updateService(existing.id, "quantity", (existing.quantity || 0) + 1); }}
-                                    className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                    aria-label="Increase"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="min-w-0">
-                                <Select
-                                  value={String(existing.staffId || "")}
-                                  onValueChange={(value) => { updateServiceStaff(existing.id, value); }}
-                                >
-                                  <SelectTrigger className={`h-7 text-[11px] w-full max-w-full min-w-0 whitespace-nowrap overflow-hidden ${!existing.staffId && invalid.staff ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-amber-400'}`}>
-                                    <SelectValue placeholder="Assign staff" />
-                                  </SelectTrigger>
-                                  <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
-                                    {masterEmployees.map((employee) => (
-                                      <SelectItem key={employee.id} value={String(employee.employee_id)} className="truncate">
-                                        <div className="truncate">{employee.employee_name}</div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-semibold text-amber-700">₹{prod.selling_price?.toLocaleString() || '0'}</span>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  className="h-7 w-7 flex items-center justify-center bg-slate-50 rounded-md text-sm font-bold text-slate-300 cursor-default"
-                                  aria-label="Decrease"
-                                  tabIndex={-1}
-                                >
-                                  −
-                                </button>
-                                <span className="text-xs font-medium min-w-[1.25rem] text-center">0</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); handleInventorySelect(prod); }}
-                                  className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
-                                  aria-label="Increase"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                  {filteredProducts.length === 0 && (
-                    <div className="text-xs text-slate-500 px-1 py-2 text-center">
-                      {showOnlySelectedProducts
-                        ? "No selected products to show"
-                        : (productSearch && productSearch.trim().length > 0)
-                          ? "No products match the search"
-                          : "No products found"
-                      }
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowOnlySelectedProducts(v => !v)}
+                          className={`h-8 px-2 ${showOnlySelectedProducts ? 'bg-amber-100 border-amber-300 text-amber-700' : ''}`}
+                          title="Show only selected inventory"
+                        >
+                          <ListChecks className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openMasterCreate('inventory')}
+                          className="h-8 w-8 p-0"
+                          title="Create new inventory item"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                          <button
+                            type="button"
+                            onClick={toggleProductsTaxExempt}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${productsTaxExempted ? 'bg-orange-600' : 'bg-gray-300'}`}
+                          >
+                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${productsTaxExempted ? 'translate-x-5' : 'translate-x-1'}`} />
+                          </button>
+                          <Label className="text-xs font-medium text-gray-700">No Tax</Label>
+                          {/* Removed '(No Tax)' label per request */}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-              )}
-            </Card>
+                  </CardTitle>
+                </CardHeader>
+                {productsOpen && (
+                  <CardContent className="p-2">
+                    <div className="mb-3">
+                      <div
+                        className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-[24rem] overflow-y-auto`}
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
+                      >
+                        {filteredProducts.map((prod) => {
+                          const existing = newInvoice.services.find(s => String(s.service_id) === `inv:${String(prod.id)}`);
+                          return (
+                            <div
+                              key={prod.id}
+                              onClick={() => handleInventorySelect(prod)}
+                              className={`p-1.5 border rounded transition-all cursor-pointer select-none ${existing ? 'border-amber-400 bg-amber-100 ring-1 ring-amber-200' : 'border-gray-200 hover:border-amber-300'
+                                }`}
+                              style={{ minHeight: '70px' }}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="text-xs font-medium text-gray-900 flex-1 pr-2 whitespace-normal break-words" title={prod.item_name}>
+                                  {prod.item_name}
+                                </div>
+                              </div>
+
+                              {existing ? (
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex items-center justify-between">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); openPriceEditor(existing.id, existing.price ?? prod.selling_price); }}
+                                      className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 hover:underline focus:outline-none"
+                                      title="Edit price"
+                                    >
+                                      ₹{(existing.price ?? prod.selling_price)?.toLocaleString?.() || '0'}
+                                      <Pencil className="h-3 w-3 opacity-70" />
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const next = Math.max(0, (existing.quantity || 0) - 1);
+                                          if (next === 0) {
+                                            removeService(existing.id);
+                                          } else {
+                                            updateService(existing.id, "quantity", next);
+                                          }
+                                        }}
+                                        className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                        aria-label="Decrease"
+                                      >
+                                        −
+                                      </button>
+                                      <span className="text-xs font-medium min-w-[1.25rem] text-center">{existing.quantity}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); updateService(existing.id, "quantity", (existing.quantity || 0) + 1); }}
+                                        className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                        aria-label="Increase"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <Select
+                                      value={String(existing.staffId || "")}
+                                      onValueChange={(value) => { updateServiceStaff(existing.id, value); }}
+                                    >
+                                      <SelectTrigger className={`h-7 text-[11px] w-full max-w-full min-w-0 whitespace-nowrap overflow-hidden ${!existing.staffId && invalid.staff ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300 focus:border-amber-400'}`}>
+                                        <SelectValue placeholder="Assign staff" />
+                                      </SelectTrigger>
+                                      <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                                        {masterEmployees.map((employee) => (
+                                          <SelectItem key={employee.id} value={String(employee.employee_id)} className="truncate">
+                                            <div className="truncate">{employee.employee_name}</div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-semibold text-amber-700">₹{prod.selling_price?.toLocaleString() || '0'}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      className="h-7 w-7 flex items-center justify-center bg-slate-50 rounded-md text-sm font-bold text-slate-300 cursor-default"
+                                      aria-label="Decrease"
+                                      tabIndex={-1}
+                                    >
+                                      −
+                                    </button>
+                                    <span className="text-xs font-medium min-w-[1.25rem] text-center">0</span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleInventorySelect(prod); }}
+                                      className="h-7 w-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-md text-sm font-bold text-slate-700"
+                                      aria-label="Increase"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {filteredProducts.length === 0 && (
+                        <div className="text-xs text-slate-500 px-1 py-2 text-center">
+                          {showOnlySelectedProducts
+                            ? "No selected products to show"
+                            : (productSearch && productSearch.trim().length > 0)
+                              ? "No products match the search"
+                              : "No products found"
+                          }
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
             )}
 
             {/* Payment Section */}
@@ -8330,7 +8402,7 @@ export default function AddInvoice() {
                       <div className="flex items-center gap-2 text-gray-600">
                         <span>Lock tax to appointment</span>
                       </div>
-                      <Switch checked={lockToApptTax} onCheckedChange={(c)=> setLockToApptTax(!!c)} />
+                      <Switch checked={lockToApptTax} onCheckedChange={(c) => setLockToApptTax(!!c)} />
                     </div>
                   )}
 
@@ -8368,7 +8440,7 @@ export default function AddInvoice() {
                         </div>
                       </div>
                     )}
-                    
+
                     {showBreakdown && (
                       <div className="space-y-1 mt-1">
                         {/* Subtotal (moved inside breakdown) */}
@@ -8421,7 +8493,7 @@ export default function AddInvoice() {
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Round Off */}
                         {roundOff !== 0 && (
                           <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100">
@@ -8438,14 +8510,14 @@ export default function AddInvoice() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Multiple Payment Methods */}
                   <div className="space-y-2">
                     <Label className="text-xs font-medium flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-green-600" />
                       Payment Methods <span className="text-red-500">*</span>
                     </Label>
-                    
+
                     {/* Add Payment Mode Dropdown */}
                     <Select
                       value=""
@@ -8461,12 +8533,12 @@ export default function AddInvoice() {
                           });
                           return;
                         }
-                        
+
                         const selectedPayment = masterPaymentModes.find(p => p.id.toString() === value);
                         if (selectedPayment && !selectedPaymentModes.find(p => p.id === value)) {
                           const currentTotal = selectedPaymentModes.reduce((sum, p) => sum + p.amount, 0);
                           const remainingAmount = Math.max(0, roundedTotal - currentTotal);
-                          
+
                           setSelectedPaymentModes(prev => [...prev, {
                             id: value,
                             name: selectedPayment.payment_mode_name,
@@ -8476,36 +8548,35 @@ export default function AddInvoice() {
                       }}
                       disabled={loading}
                     >
-                      <SelectTrigger className={`h-8 text-xs border-dashed focus:outline-none focus:ring-0 ${
-                        invalid.payment && selectedPaymentModes.length === 0
-                          ? 'border-red-500 ring-1 ring-red-500'
-                          : newInvoice.services.some(service => service.name && service.price > 0)
-                            ? 'border-emerald-300 bg-emerald-50/30 hover:bg-emerald-50 focus:border-emerald-400'
-                            : 'border-slate-300 bg-slate-50/50 cursor-not-allowed opacity-60'
-                      }`}>
+                      <SelectTrigger className={`h-8 text-xs border-dashed focus:outline-none focus:ring-0 ${invalid.payment && selectedPaymentModes.length === 0
+                        ? 'border-red-500 ring-1 ring-red-500'
+                        : newInvoice.services.some(service => service.name && service.price > 0)
+                          ? 'border-emerald-300 bg-emerald-50/30 hover:bg-emerald-50 focus:border-emerald-400'
+                          : 'border-slate-300 bg-slate-50/50 cursor-not-allowed opacity-60'
+                        }`}>
                         <SelectValue placeholder={newInvoice.services.some(service => service.name && service.price > 0) ? "+ Add payment method" : "Select services first"} />
                       </SelectTrigger>
                       <SelectContent>
                         {masterPaymentModes
                           .filter(payment => !selectedPaymentModes.find(p => p.id === payment.id.toString()))
                           .map((payment) => (
-                          <SelectItem key={payment.id} value={payment.id.toString()}>
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="h-3 w-3 text-emerald-600" />
-                              {payment.payment_mode_name}
-                            </div>
-                          </SelectItem>
-                        ))}
+                            <SelectItem key={payment.id} value={payment.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="h-3 w-3 text-emerald-600" />
+                                {payment.payment_mode_name}
+                              </div>
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
-  
+
                     {/* Selected Payment Methods */}
                     {selectedPaymentModes.length > 0 && (
                       <div className="space-y-1.5 bg-emerald-50/30 p-2 rounded border border-emerald-200/50">
                         {selectedPaymentModes.map((payMode, index) => {
                           const totalPaid = selectedPaymentModes.reduce((sum, p) => sum + p.amount, 0);
                           const remaining = Math.max(0, roundedTotal - totalPaid);
-                          
+
                           return (
                             <div key={payMode.id} className="flex items-center gap-1.5 bg-white p-1.5 rounded border border-emerald-200">
                               <div className="flex items-center gap-1.5 flex-1">
@@ -8521,16 +8592,16 @@ export default function AddInvoice() {
                                     const newAmount = parseFloat(e.target.value) || 0;
                                     const maxAllowed = roundedTotal;
                                     const adjustedAmount = Math.min(Math.max(0, newAmount), maxAllowed);
-                                    
+
                                     setSelectedPaymentModes(prev => {
                                       // Update the current payment mode
                                       const updated = [...prev];
                                       updated[index] = { ...updated[index], amount: adjustedAmount };
-                                      
+
                                       // Calculate remaining amount
                                       const totalPaid = updated.reduce((sum, p) => sum + p.amount, 0);
                                       const remaining = roundedTotal - totalPaid;
-                                      
+
                                       // If there's a remaining amount and other payment modes exist,
                                       // adjust the first other payment mode
                                       if (remaining !== 0 && updated.length > 1) {
@@ -8540,10 +8611,10 @@ export default function AddInvoice() {
                                           updated[otherIndex] = { ...updated[otherIndex], amount: newOtherAmount };
                                         }
                                       }
-                                      
+
                                       return updated;
                                     });
-                                    
+
                                     // Don't auto-set credit when user is manually adjusting payments
                                     // Let the user control payment distribution
                                   }}
@@ -8572,7 +8643,7 @@ export default function AddInvoice() {
                         })}
                       </div>
                     )}
-  
+
                     {/* Credit Amount */}
                     <div className="bg-white p-1.5 rounded border border-slate-200">
                       <div className="flex items-center justify-between mb-0.5">
@@ -8595,13 +8666,13 @@ export default function AddInvoice() {
                             const newCreditAmount = Number(e.target.value) || 0;
                             const maxCredit = roundedTotal;
                             const adjustedCredit = Math.min(Math.max(0, newCreditAmount), maxCredit);
-                            
+
                             setCreditAmount(adjustedCredit);
-                            
+
                             // Automatically adjust payment modes when credit is entered
                             if (selectedPaymentModes.length > 0) {
                               const remainingForPayments = roundedTotal - adjustedCredit;
-                              
+
                               setSelectedPaymentModes(prev => {
                                 if (remainingForPayments <= 0) {
                                   // If credit covers full amount, clear all payment modes
@@ -8686,7 +8757,7 @@ export default function AddInvoice() {
                           const value = parseFloat(inputValue) || 0;
                           // For percentage discounts, cap at 100%
                           // For fixed amount discounts, cap at subtotal to prevent negative totals
-                          let adjustedValue = newInvoice.discountType === 'percentage' 
+                          let adjustedValue = newInvoice.discountType === 'percentage'
                             ? Math.min(Math.max(value, 0), 100)
                             : Math.min(Math.max(value, 0), subtotal);
 
@@ -8704,11 +8775,10 @@ export default function AddInvoice() {
                             discount: String(adjustedValue),
                           });
                         }}
-                        className={`no-number-spinner flex-1 h-9 text-sm border-slate-300 focus:border-slate-400 focus:ring-0 ${
-                          (customerMembership && applyMembershipDiscountToggle)
-                            ? 'bg-slate-50 text-slate-700 cursor-not-allowed'
-                            : 'bg-white'
-                        }`}
+                        className={`no-number-spinner flex-1 h-9 text-sm border-slate-300 focus:border-slate-400 focus:ring-0 ${(customerMembership && applyMembershipDiscountToggle)
+                          ? 'bg-slate-50 text-slate-700 cursor-not-allowed'
+                          : 'bg-white'
+                          }`}
                         placeholder={newInvoice.discountType === 'percentage' ? "0" : "0.00"}
                       />
                       <Select
@@ -8764,7 +8834,7 @@ export default function AddInvoice() {
                       </Select>
                     </div>
                   </div>
-                  
+
                   {/* Total Amount */}
                   <div className="pt-2 mt-2 border-t-2 border-gray-300">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -8836,9 +8906,9 @@ export default function AddInvoice() {
                 </div>
                 {/* Add More details modal */}
                 {showMoreDetails && (
-                  <div 
-                    className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" 
-                    role="dialog" 
+                  <div
+                    className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center"
+                    role="dialog"
                     aria-modal="true"
                     onClick={(e) => {
                       if (e.target === e.currentTarget) {
@@ -8846,7 +8916,7 @@ export default function AddInvoice() {
                       }
                     }}
                   >
-                    <div 
+                    <div
                       className="bg-white rounded-lg shadow-xl w-[96vw] max-w-3xl p-5"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -8854,7 +8924,7 @@ export default function AddInvoice() {
                         <h2 className="text-sm font-semibold text-slate-800">Additional Customer Details</h2>
                         <button className="text-slate-500 hover:text-slate-700" onClick={() => setShowMoreDetails(false)} aria-label="Close">✕</button>
                       </div>
-                      
+
                       {/* Customer Name + Phone (styled like other fields) */}
                       {(() => {
                         const modalRow = moreDetailsCustomerId ? customers.find(c => c.id === moreDetailsCustomerId) : customers[0];
@@ -8883,12 +8953,12 @@ export default function AddInvoice() {
                           </div>
                         );
                       })()}
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-0.5">
                           <label className="text-xs font-medium text-slate-700">Membership</label>
-                          <Select 
-                            value={moreDetails.membership_id || ''} 
+                          <Select
+                            value={moreDetails.membership_id || ''}
                             onValueChange={(v) => setMoreDetails((s) => ({ ...s, membership_id: v }))}
                             disabled={false}
                           >
@@ -8904,10 +8974,10 @@ export default function AddInvoice() {
                         </div>
                         <div className="space-y-0.5">
                           <label className="text-xs font-medium text-slate-700">Birthday Date</label>
-                          <input 
-                            type="date" 
-                            className="h-8 text-xs border border-slate-300 rounded-md px-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            value={moreDetails.birthday_date || ''} 
+                          <input
+                            type="date"
+                            className="h-8 text-xs border border-slate-300 rounded-md px-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={moreDetails.birthday_date || ''}
                             onChange={(e) => {
                               e.stopPropagation();
                               setMoreDetails((s) => ({ ...s, birthday_date: e.target.value }));
@@ -8918,10 +8988,10 @@ export default function AddInvoice() {
                         </div>
                         <div className="space-y-0.5">
                           <label className="text-xs font-medium text-slate-700">Anniversary Date</label>
-                          <input 
-                            type="date" 
-                            className="h-8 text-xs border border-slate-300 rounded-md px-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            value={moreDetails.anniversary_date || ''} 
+                          <input
+                            type="date"
+                            className="h-8 text-xs border border-slate-300 rounded-md px-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={moreDetails.anniversary_date || ''}
                             onChange={(e) => {
                               e.stopPropagation();
                               setMoreDetails((s) => ({ ...s, anniversary_date: e.target.value }));
@@ -8951,10 +9021,10 @@ export default function AddInvoice() {
                         </div>
                         <div className="space-y-0.5 sm:col-span-2">
                           <label className="text-xs font-medium text-slate-700">Address</label>
-                          <textarea 
-                            className="text-xs border border-slate-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" 
-                            rows={3} 
-                            value={moreDetails.address || ''} 
+                          <textarea
+                            className="text-xs border border-slate-300 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                            rows={3}
+                            value={moreDetails.address || ''}
                             onChange={(e) => {
                               e.stopPropagation();
                               setMoreDetails((s) => ({ ...s, address: e.target.value }));
@@ -8969,7 +9039,7 @@ export default function AddInvoice() {
                         <Button type="button" variant="outline" className="h-8 text-xs" onClick={() => { setShowMoreDetails(false); setMoreDetailsCustomerId(null); }}>Cancel</Button>
                         <Button type="button" className="h-8 text-xs" onClick={async () => {
                           if (!user) return;
-                          
+
                           const acc = (user as any)?.account_code;
                           const ret = (user as any)?.retail_code;
                           const modalRow = moreDetailsCustomerId ? customers.find(c => c.id === moreDetailsCustomerId) : customers[0];
@@ -8979,7 +9049,7 @@ export default function AddInvoice() {
                             toast({ title: "Missing Customer Info", description: "Please enter customer name and phone for this row before saving additional details.", className: "border-yellow-200 bg-yellow-50 text-yellow-900" });
                             return;
                           }
-                          
+
                           try {
                             // If there is a known selected customer id, try to update that; otherwise find by phone/name
                             if (selectedCustomer) {
@@ -8993,12 +9063,12 @@ export default function AddInvoice() {
                               if (!rows.length && Array.isArray(rowsRaw)) {
                                 rows = rowsRaw;
                               }
-                              
+
                               // Find customer by multiple matching strategies
                               const customerId = selectedCustomer.id;
                               const customerPhone = modalPhone;
                               const customerName = modalName;
-                              
+
                               const onlyDigits = (s: string) => s.replace(/\D+/g, '');
                               const existing = rows.find((r: any) => {
                                 // Strategy 1: Match by customer_id
@@ -9014,7 +9084,7 @@ export default function AddInvoice() {
                                 if (customerName && String(r?.customer_name || '').toLowerCase().trim() === customerName.toLowerCase()) return true;
                                 return false;
                               });
-                              
+
                               if (existing) {
                                 const updatePayload: any = {
                                   id: existing.id, // Use the primary key for update
@@ -9033,9 +9103,9 @@ export default function AddInvoice() {
                                   ...(moreDetails.membership_cardno ? { membership_cardno: String(moreDetails.membership_cardno).trim() } : {}),
                                   ...(moreDetails.address ? { address: String(moreDetails.address).trim() } : {}),
                                 };
-                                
+
                                 console.log('🔍 UPDATE PAYLOAD:', updatePayload);
-                                
+
                                 const updateRes: any = await DataService.updateData("master_customer", updatePayload);
                                 if (updateRes?.success) {
                                   toast({ title: "Customer Updated", description: "Customer details updated successfully" });
@@ -9058,7 +9128,7 @@ export default function AddInvoice() {
                                 if (!rows.length && Array.isArray(rowsRaw)) {
                                   rows = rowsRaw;
                                 }
-                                
+
                                 // Find existing customer by phone
                                 const phone = modalPhone;
                                 const onlyDigits = (s: string) => s.replace(/\D+/g, '');
@@ -9066,7 +9136,7 @@ export default function AddInvoice() {
                                   const p = String(r?.phone || r?.phone1 || r?.mobile || r?.customer_phone || r?.mobile_number || "");
                                   return p && onlyDigits(p) === onlyDigits(phone);
                                 });
-                                
+
                                 if (existing) {
                                   // Update existing customer
                                   const updatePayload: any = {
@@ -9081,7 +9151,7 @@ export default function AddInvoice() {
                                     ...(moreDetails.membership_cardno ? { membership_cardno: String(moreDetails.membership_cardno).trim() } : {}),
                                     ...(moreDetails.address ? { address: String(moreDetails.address).trim() } : {}),
                                   };
-                                  
+
                                   const updateRes: any = await DataService.updateData("master_customer", updatePayload);
                                   if (updateRes?.success) {
                                     toast({ title: "Customer Updated", description: "Customer details updated successfully" });
@@ -9098,15 +9168,15 @@ export default function AddInvoice() {
                                     const maxCustomerId = numericCustomerIds.length ? Math.max(...numericCustomerIds) : 0;
                                     nextCustomerId = maxCustomerId + 1;
                                   }
-                                  
-                                  const normalizedGender = (newInvoice.customerGender||'').trim().toLowerCase();
-                                  const genderFull = (()=>{
-                                    if (normalizedGender==='male' || normalizedGender==='m') return 'Male';
-                                    if (normalizedGender==='female' || normalizedGender==='f') return 'Female';
-                                    if (normalizedGender==='other' || normalizedGender==='o') return 'Other';
+
+                                  const normalizedGender = (newInvoice.customerGender || '').trim().toLowerCase();
+                                  const genderFull = (() => {
+                                    if (normalizedGender === 'male' || normalizedGender === 'm') return 'Male';
+                                    if (normalizedGender === 'female' || normalizedGender === 'f') return 'Female';
+                                    if (normalizedGender === 'other' || normalizedGender === 'o') return 'Other';
                                     return undefined;
                                   })();
-                                  
+
                                   const customerPayload: any = {
                                     customer_id: nextCustomerId,
                                     customer_name: modalName,
@@ -9114,7 +9184,7 @@ export default function AddInvoice() {
                                     phone1: phone,
                                     account_code: acc,
                                     retail_code: ret,
-                                    ...(genderFull ? { gender: genderFull.slice(0,18) } : {}),
+                                    ...(genderFull ? { gender: genderFull.slice(0, 18) } : {}),
                                     ...(moreDetails.membership_id ? { membership_id: String(moreDetails.membership_id).trim() } : {}),
                                     ...(moreDetails.birthday_date ? { birthday_date: moreDetails.birthday_date } : {}),
                                     ...(moreDetails.anniversary_date ? { anniversary_date: moreDetails.anniversary_date } : {}),
@@ -9126,7 +9196,7 @@ export default function AddInvoice() {
                                     created_by: user?.username || 'system',
                                     updated_by: user?.username || 'system',
                                   };
-                                  
+
                                   const createRes: any = await DataService.createData("master_customer", customerPayload, null, acc, ret);
                                   if (createRes?.success) {
                                     setSelectedCustomer({
@@ -9146,7 +9216,7 @@ export default function AddInvoice() {
                                 }
                               }
                             }
-                            
+
                             // Apply details to invoice state
                             setNewInvoice(prev => ({
                               ...prev,
@@ -9156,12 +9226,12 @@ export default function AddInvoice() {
                               customerMembershipCardNo: moreDetails.membership_cardno || prev.customerMembershipCardNo,
                               customerAddress: moreDetails.address || prev.customerAddress,
                             }));
-                            
+
                           } catch (error) {
                             console.error('Error saving customer details:', error);
                             toast({ title: "Save Failed", description: "Error saving customer details", className: "border-yellow-200 bg-yellow-50 text-yellow-900" });
                           }
-                          
+
                           setShowMoreDetails(false);
                         }}>{selectedCustomer ? 'Update' : 'Save'}</Button>
                       </div>
@@ -9180,7 +9250,7 @@ export default function AddInvoice() {
           data-customer-suggestions
           role="listbox"
           className="fixed bg-white rounded-none shadow-none ring-1 ring-slate-200 max-h-64 overflow-y-auto overflow-x-hidden"
-          style={{ 
+          style={{
             top: customerDropdownPos.current.top,
             left: customerDropdownPos.current.left,
             // Fit exactly within the textbox width
@@ -9194,7 +9264,7 @@ export default function AddInvoice() {
           {customerSuggestions.map((c, idx) => {
             const name = c.customer_name || c.full_name || c.name || '';
             const phone = c.phone || c.mobile || c.customer_phone || '';
-            
+
             return (
               <div
                 key={idx}
@@ -9255,9 +9325,8 @@ export default function AddInvoice() {
             {suggestions.map((suggestion, idx) => (
               <div
                 key={idx}
-                className={`p-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0 transition-colors touch-manipulation ${
-                  selectedSuggestionIndex === idx ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                }`}
+                className={`p-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0 transition-colors touch-manipulation ${selectedSuggestionIndex === idx ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                  }`}
                 onMouseDown={() => {
                   selectSuggestion(showSuggestions, suggestion);
                 }}
@@ -9364,7 +9433,7 @@ export default function AddInvoice() {
       </Dialog>
 
       {/* Print Confirmation Dialog */}
-      <Dialog open={showPrintConfirmation} onOpenChange={() => {}}>
+      <Dialog open={showPrintConfirmation} onOpenChange={() => { }}>
         <DialogContent className="max-w-md p-6" overlayClassName="bg-black/60">
           <DialogHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -9377,7 +9446,7 @@ export default function AddInvoice() {
               Would you like to print the receipt now?
             </DialogDescription>
           </DialogHeader>
-          
+
           {invoiceDataForPrint && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
               <div className="text-sm space-y-1">
@@ -9400,17 +9469,17 @@ export default function AddInvoice() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter className="mt-6 flex gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => handlePrintConfirmation(false)}
               className="flex-1"
             >
               <X className="h-4 w-4 mr-2" />
               Skip Print
             </Button>
-            <Button 
+            <Button
               onClick={() => handlePrintConfirmation(true)}
               className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
@@ -9457,8 +9526,8 @@ export default function AddInvoice() {
                   <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
                     <div className="text-center">
                       <p className="text-base font-bold text-orange-700">
-                        {visitHistoryData.summary?.last_visit 
-                          ? new Date(visitHistoryData.summary.last_visit).toLocaleDateString() 
+                        {visitHistoryData.summary?.last_visit
+                          ? new Date(visitHistoryData.summary.last_visit).toLocaleDateString()
                           : 'N/A'
                         }
                       </p>
@@ -9582,8 +9651,8 @@ export default function AddInvoice() {
           </div>
 
           <DialogFooter className="mt-4 pt-3 border-t border-gray-200">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setShowVisitHistory(false);
                 setVisitHistoryData(null);
@@ -9833,7 +9902,7 @@ export default function AddInvoice() {
                   Full Credit Billing
                 </p>
                 <p className="text-sm text-orange-700">
-                  This invoice will be billed with full amount <span className="font-semibold">₹{roundedTotal.toLocaleString()}</span> as credit. 
+                  This invoice will be billed with full amount <span className="font-semibold">₹{roundedTotal.toLocaleString()}</span> as credit.
                   No payment will be collected now.
                 </p>
               </div>
@@ -9841,8 +9910,8 @@ export default function AddInvoice() {
           </div>
 
           <DialogFooter className="mt-6 flex gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setShowCreditConfirmation(false);
                 setPendingSubmit(null);
@@ -9852,7 +9921,7 @@ export default function AddInvoice() {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={async () => {
                 setShowCreditConfirmation(false);
                 if (pendingSubmit) {
@@ -9874,33 +9943,33 @@ export default function AddInvoice() {
         </DialogContent>
       </Dialog>
 
-        {/* Cancel Confirmation Dialog */}
-        <Dialog open={showCancelConfirmation} onOpenChange={setShowCancelConfirmation}>
-          <DialogContent className="max-w-md" overlayClassName="bg-black/60">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-rose-600" />
-                Confirm Cancel Invoice
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-600">
-                Are you sure you want to cancel this invoice? This will mark the invoice as cancelled and cannot be billed.
-              </DialogDescription>
-            </DialogHeader>
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelConfirmation} onOpenChange={setShowCancelConfirmation}>
+        <DialogContent className="max-w-md" overlayClassName="bg-black/60">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-rose-600" />
+              Confirm Cancel Invoice
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Are you sure you want to cancel this invoice? This will mark the invoice as cancelled and cannot be billed.
+            </DialogDescription>
+          </DialogHeader>
 
-            <DialogFooter className="mt-6 flex gap-3">
-              <Button variant="outline" onClick={() => setShowCancelConfirmation(false)} className="flex-1">Back</Button>
-              <Button onClick={confirmCancelInvoice} className="flex-1 bg-rose-600 hover:bg-rose-700">
-                {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <DialogFooter className="mt-6 flex gap-3">
+            <Button variant="outline" onClick={() => setShowCancelConfirmation(false)} className="flex-1">Back</Button>
+            <Button onClick={confirmCancelInvoice} className="flex-1 bg-rose-600 hover:bg-rose-700">
+              {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Wallet Ledger Dialog */}
       <Dialog open={showWalletLedger} onOpenChange={setShowWalletLedger}>
         <DialogContent className="max-w-5xl">
           {/* Header removed per requirement */}
-          
+
           <div className="space-y-4">
             {walletLedgerLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -9962,7 +10031,7 @@ export default function AddInvoice() {
                     </div>
                   ) : null;
                 })()}
-                
+
                 {/* Transaction Table */}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="max-h-96 overflow-y-auto">
@@ -9990,32 +10059,29 @@ export default function AddInvoice() {
                                 {new Date(transaction.entry_date).toLocaleDateString()}
                               </td>
                               <td className="p-3">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  transaction.txn_type === 'ADD' || transaction.txn_type === 'PAYMENT'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${transaction.txn_type === 'ADD' || transaction.txn_type === 'PAYMENT'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                                  }`}>
                                   {transaction.txn_type === 'ADD' ? 'Wallet Top-up' :
-                                   transaction.txn_type === 'PAYMENT' ? 'Credit Payment' :
-                                   transaction.txn_type === 'USE' ? 'Wallet Used' :
-                                   transaction.txn_type === 'CREDIT' ? 'Credit Sale' :
-                                   transaction.txn_type}
+                                    transaction.txn_type === 'PAYMENT' ? 'Credit Payment' :
+                                      transaction.txn_type === 'USE' ? 'Wallet Used' :
+                                        transaction.txn_type === 'CREDIT' ? 'Credit Sale' :
+                                          transaction.txn_type}
                                 </span>
                               </td>
-                              <td className={`p-3 text-right font-medium ${
-                                transaction.txn_type === 'ADD' || transaction.txn_type === 'PAYMENT'
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                              }`}>
+                              <td className={`p-3 text-right font-medium ${transaction.txn_type === 'ADD' || transaction.txn_type === 'PAYMENT'
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                                }`}>
                                 {transaction.txn_type === 'ADD' || transaction.txn_type === 'PAYMENT' ? '+' : '-'}
                                 ₹{transaction.amount.toLocaleString()}
                               </td>
                               <td className="p-3">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  (transaction.txn_type === 'PAYMENT' || transaction.status === 'SUCCESS') ? 'bg-green-100 text-green-700' :
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${(transaction.txn_type === 'PAYMENT' || transaction.status === 'SUCCESS') ? 'bg-green-100 text-green-700' :
                                   transaction.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-blue-100 text-blue-700'
-                                }`}>
+                                    'bg-blue-100 text-blue-700'
+                                  }`}>
                                   {transaction.txn_type === 'PAYMENT' ? 'PAID' : transaction.status}
                                 </span>
                               </td>
@@ -10035,7 +10101,7 @@ export default function AddInvoice() {
               </>
             )}
           </div>
-          
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setShowWalletLedger(false)}>
               Close
@@ -10093,7 +10159,7 @@ export default function AddInvoice() {
       />
     </form>
   );
-  
+
 }
 
 // Inventory (retail products)
