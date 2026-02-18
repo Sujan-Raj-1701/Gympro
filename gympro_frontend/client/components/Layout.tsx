@@ -48,6 +48,7 @@ import {
   MessageSquareText,
   DollarSign,
   Search,
+  TrendingUp,
 } from "lucide-react";
 import { saveAs } from "file-saver";
 import { useAuth } from "@/contexts/AuthContext";
@@ -112,6 +113,12 @@ const menuItems: MenuItem[] = [
     permission: "settlement",
   },
   {
+    title: "Client Performance",
+    icon: TrendingUp,
+    href: "/client-performance",
+    permission: "client-performance",
+  },
+  {
     title: "User Management",
     icon: UserCog,
     href: "/user-management",
@@ -165,7 +172,7 @@ export default function Layout() {
 
   // Debug logging for sidebar state changes
   useEffect(() => {
-    
+
   }, [sidebarCollapsed, sidebarMinimized]);
 
   // Sidebar search removed
@@ -181,7 +188,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [headerTitle, setHeaderTitle] = useState<string>('');
-  
+
   // Notification state
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'info', title: 'New Booking Request', message: 'Hall booking for tomorrow needs approval', time: '5 min ago', read: false },
@@ -241,7 +248,7 @@ export default function Layout() {
     if (typeof daysToExpiry === 'number' && daysToExpiry <= 0 && !expiredPopupShown) {
       // Defer to ensure Sidebar mounts and registers the event listener
       const t = setTimeout(() => {
-        try { window.dispatchEvent(new Event('open-license-modal')); } catch {}
+        try { window.dispatchEvent(new Event('open-license-modal')); } catch { }
         setExpiredPopupShown(true);
       }, 300);
       return () => clearTimeout(t);
@@ -271,7 +278,7 @@ export default function Layout() {
           }
         }
       }
-    } catch {}
+    } catch { }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -324,7 +331,7 @@ export default function Layout() {
             if (d) expiry = d;
           }
         }
-      } catch {}
+      } catch { }
 
       // 2) Fallback to deriving from localStorage licence key
       if (!expiry) {
@@ -332,7 +339,7 @@ export default function Layout() {
           const localKey = localStorage.getItem('licencekey') || undefined;
           const derived = LicenseService.deriveExpiryFromLicenceKey(localKey || undefined);
           if (derived) expiry = derived;
-        } catch {}
+        } catch { }
       }
 
       // 3) Fallback to license_info in session
@@ -348,7 +355,7 @@ export default function Layout() {
               if (d) expiry = d;
             }
           }
-        } catch {}
+        } catch { }
       }
 
       if (!expiry) {
@@ -491,7 +498,7 @@ export default function Layout() {
       }, "image/png");
     } catch (err) {
       console.error("Failed to capture screenshot", err);
-      try { alert("Failed to capture screenshot. Please try again."); } catch {}
+      try { alert("Failed to capture screenshot. Please try again."); } catch { }
     }
   };
 
@@ -604,89 +611,89 @@ export default function Layout() {
   return (
     <SidebarContext.Provider value={{ setSidebarCollapsed }}>
       <HeaderContext.Provider value={{ headerTitle, setHeaderTitle }}>
-      <div className="relative min-h-screen flex flex-col bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-black transition-colors">
-        {/* Soft radial overlay to increase fade */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,_rgba(2,6,23,0.08),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top_left,_rgba(148,163,184,0.10),transparent_55%)]"
-        />
-        {/* Header */}
-        {!embed && (
-        <header className="border-b bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80 sticky top-0 z-50 shadow-sm overflow-hidden pt-[env(safe-area-inset-top)] print:hidden">
-          <div className="flex h-[56px] items-center px-2 gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-
-            <div className="flex-1 flex justify-center h-[56px] lg:justify-start min-w-0">
-              <div className="flex items-center brand-container min-w-0">
-                {/* Brand: GYM Pro */}
-                <Link
-                  to="/"
-                  aria-label="GYM Pro home"
-                  className="mr-3 inline-flex items-center select-none"
+        <div className="relative min-h-screen flex flex-col bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-black transition-colors">
+          {/* Soft radial overlay to increase fade */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,_rgba(2,6,23,0.08),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top_left,_rgba(148,163,184,0.10),transparent_55%)]"
+          />
+          {/* Header */}
+          {!embed && (
+            <header className="border-b bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80 sticky top-0 z-50 shadow-sm overflow-hidden pt-[env(safe-area-inset-top)] print:hidden">
+              <div className="flex h-[56px] items-center px-2 gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className="lg:hidden"
                 >
-                   <Bot className="h-5 w-5 mr-1.5 text-blue-600" />
-                  <span className="hidden sm:inline text-xl font-normal tracking-wide">
-                    <span className="text-red-600">Gym</span>
-                    <span className="text-blue-600">Pro</span>
-                  </span>
-                  <span className="sm:hidden text-lg font-normal">
-                    <span className="text-red-600">Gym</span>
-                    <span className="text-blue-600">Pro</span>
-                  </span>
-                </Link>
-                {/* License expiry message */}
-                {showLicenseBanner && (
-                  <>
-                    {/* Compact version for small screens */}
-                    <div
-                      className={cn(
-                        "md:hidden inline-flex items-center rounded px-2 py-0.5 border text-[11px] font-medium",
-                        isCritical ? "bg-red-100 text-red-900 border-red-200" : "bg-amber-100 text-amber-900 border-amber-200",
-                      )}
-                    >
-                      <AlertCircle className={cn("h-3 w-3 mr-1", isCritical ? "text-red-600" : "text-amber-600")} />
-                      Expires in {daysToExpiry}d
-                    </div>
-                    {/* Responsive, multi-line version for md+ screens */}
-                    <div
-                      className={cn(
-                        "hidden md:flex flex-wrap items-center gap-2 rounded-md px-3 py-1 border text-xs font-medium max-w-full",
-                        isCritical ? "bg-red-100 text-red-900 border-red-200" : "bg-amber-100 text-amber-900 border-amber-200",
-                      )}
-                      style={{lineHeight: 1.25}}
-                    >
-                      <AlertCircle className={cn("h-3.5 w-3.5 shrink-0", isCritical ? "text-red-600" : "text-amber-600")} />
-                      <span className="whitespace-normal break-words leading-snug">
-                        License expiring soon: {`in ${daysToExpiry} day${daysToExpiry === 1 ? '' : 's'}`}
-                        {expiryIso ? ` (on ${format(new Date(expiryIso), 'dd MMM yyyy')})` : ''}. Contact 7397288500 or admin@techiesmagnifier.com to renew.
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          try { window.dispatchEvent(new Event('open-license-modal')); } catch {}
-                        }}
-                        className={cn(
-                          "px-2 py-0.5 rounded border text-xs font-semibold shrink-0",
-                          isCritical ? "bg-red-200/60 border-red-300 text-red-900 hover:bg-red-200" : "bg-amber-200/60 border-amber-300 text-amber-900 hover:bg-amber-200"
-                        )}
-                      >
-                        Click now
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+                  <Menu className="h-5 w-5" />
+                </Button>
 
-            {/* Header title slot (center area) */}
-            {/* <div className="flex-1 flex justify-center lg:justify-start">
+                <div className="flex-1 flex justify-center h-[56px] lg:justify-start min-w-0">
+                  <div className="flex items-center brand-container min-w-0">
+                    {/* Brand: GYM Pro */}
+                    <Link
+                      to="/"
+                      aria-label="GYM Pro home"
+                      className="mr-3 inline-flex items-center select-none"
+                    >
+                      <Bot className="h-5 w-5 mr-1.5 text-blue-600" />
+                      <span className="hidden sm:inline text-xl font-normal tracking-wide">
+                        <span className="text-red-600">Gym</span>
+                        <span className="text-blue-600">Pro</span>
+                      </span>
+                      <span className="sm:hidden text-lg font-normal">
+                        <span className="text-red-600">Gym</span>
+                        <span className="text-blue-600">Pro</span>
+                      </span>
+                    </Link>
+                    {/* License expiry message */}
+                    {showLicenseBanner && (
+                      <>
+                        {/* Compact version for small screens */}
+                        <div
+                          className={cn(
+                            "md:hidden inline-flex items-center rounded px-2 py-0.5 border text-[11px] font-medium",
+                            isCritical ? "bg-red-100 text-red-900 border-red-200" : "bg-amber-100 text-amber-900 border-amber-200",
+                          )}
+                        >
+                          <AlertCircle className={cn("h-3 w-3 mr-1", isCritical ? "text-red-600" : "text-amber-600")} />
+                          Expires in {daysToExpiry}d
+                        </div>
+                        {/* Responsive, multi-line version for md+ screens */}
+                        <div
+                          className={cn(
+                            "hidden md:flex flex-wrap items-center gap-2 rounded-md px-3 py-1 border text-xs font-medium max-w-full",
+                            isCritical ? "bg-red-100 text-red-900 border-red-200" : "bg-amber-100 text-amber-900 border-amber-200",
+                          )}
+                          style={{ lineHeight: 1.25 }}
+                        >
+                          <AlertCircle className={cn("h-3.5 w-3.5 shrink-0", isCritical ? "text-red-600" : "text-amber-600")} />
+                          <span className="whitespace-normal break-words leading-snug">
+                            License expiring soon: {`in ${daysToExpiry} day${daysToExpiry === 1 ? '' : 's'}`}
+                            {expiryIso ? ` (on ${format(new Date(expiryIso), 'dd MMM yyyy')})` : ''}. Contact 7397288500 or admin@techiesmagnifier.com to renew.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              try { window.dispatchEvent(new Event('open-license-modal')); } catch { }
+                            }}
+                            className={cn(
+                              "px-2 py-0.5 rounded border text-xs font-semibold shrink-0",
+                              isCritical ? "bg-red-200/60 border-red-300 text-red-900 hover:bg-red-200" : "bg-amber-200/60 border-amber-300 text-amber-900 hover:bg-amber-200"
+                            )}
+                          >
+                            Click now
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Header title slot (center area) */}
+                {/* <div className="flex-1 flex justify-center lg:justify-start">
               <div className="w-full flex justify-center lg:justify-start">
                 <div className="hidden lg:block ml-6">
                   <div className="text-lg font-semibold text-slate-800">{headerTitle}</div>
@@ -694,212 +701,212 @@ export default function Layout() {
               </div>
             </div> */}
 
-            {/* Header Actions */}
-            <div className="flex items-center space-x-2 shrink-0 pr-1">
-              {/* Quick Actions */}
-              <div className="hidden sm:flex items-center space-x-1">
-                {/* AI Assistant */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setAiOpen(true)}
-                  title="Open AI Assistant"
-                  className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
-                >
-                  <Bot className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCaptureScreenshot}
-                  title="Capture Screenshot"
-                  className="h-9 w-9 hover:bg-green-50 hover:text-green-600"
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleRefresh}
-                  title="Refresh"
-                  className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
+                {/* Header Actions */}
+                <div className="flex items-center space-x-2 shrink-0 pr-1">
+                  {/* Quick Actions */}
+                  <div className="hidden sm:flex items-center space-x-1">
+                    {/* AI Assistant */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setAiOpen(true)}
+                      title="Open AI Assistant"
+                      className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      <Bot className="h-4 w-4" />
+                    </Button>
 
-              {/* Module Search */}
-              <Popover open={moduleSearchOpen} onOpenChange={setModuleSearchOpen}>
-                <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleCaptureScreenshot}
+                      title="Capture Screenshot"
+                      className="h-9 w-9 hover:bg-green-50 hover:text-green-600"
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRefresh}
+                      title="Refresh"
+                      className="h-9 w-9 hover:bg-orange-50 hover:text-orange-600"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Module Search */}
+                  <Popover open={moduleSearchOpen} onOpenChange={setModuleSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Search modules"
+                        className="h-9 w-9 hover:bg-slate-50 hover:text-slate-700"
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-[340px] p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search modules..."
+                          value={moduleSearchQuery}
+                          onValueChange={setModuleSearchQuery}
+                          autoFocus
+                        />
+                        <CommandList>
+                          <CommandEmpty>No modules found.</CommandEmpty>
+                          <CommandGroup heading="Modules">
+                            {moduleSuggestions.map((m) => (
+                              <CommandItem
+                                key={m.href}
+                                value={`${m.title} ${m.href}`}
+                                onSelect={() => {
+                                  setModuleSearchOpen(false);
+                                  setModuleSearchQuery("");
+                                  navigate(m.href);
+                                }}
+                              >
+                                <div className="flex flex-col">
+                                  <span>{m.title}</span>
+                                  <span className="text-xs text-muted-foreground">{m.href}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Notification icon hidden in header */}
+                  <div className="hidden">
+                    {/* NotificationBell removed */}
+                  </div>
+
+                  {/* Fullscreen Toggle */}
                   <Button
                     variant="ghost"
                     size="icon"
-                    title="Search modules"
-                    className="h-9 w-9 hover:bg-slate-50 hover:text-slate-700"
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                    className="h-9 w-9 hover:bg-slate-50 hover:text-slate-600 hidden sm:inline-flex"
                   >
-                    <Search className="h-4 w-4" />
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-[340px] p-0">
-                  <Command>
-                    <CommandInput
-                      placeholder="Search modules..."
-                      value={moduleSearchQuery}
-                      onValueChange={setModuleSearchQuery}
-                      autoFocus
-                    />
-                    <CommandList>
-                      <CommandEmpty>No modules found.</CommandEmpty>
-                      <CommandGroup heading="Modules">
-                        {moduleSuggestions.map((m) => (
-                          <CommandItem
-                            key={m.href}
-                            value={`${m.title} ${m.href}`}
-                            onSelect={() => {
-                              setModuleSearchOpen(false);
-                              setModuleSearchQuery("");
-                              navigate(m.href);
-                            }}
-                          >
-                            <div className="flex flex-col">
-                              <span>{m.title}</span>
-                              <span className="text-xs text-muted-foreground">{m.href}</span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
 
-              {/* Notification icon hidden in header */}
-              <div className="hidden">
-                {/* NotificationBell removed */}
+                  {/* Mobile: condensed actions menu */}
+                  <div className="sm:hidden">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9">
+                          <MoreVertical className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem onClick={() => setAiOpen(true)}>
+                          <Bot className="mr-2 h-4 w-4" /> AI Assistant
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleCaptureScreenshot}>
+                          <Camera className="mr-2 h-4 w-4" /> Screenshot
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleRefresh}>
+                          <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={toggleFullscreen}>
+                          {isFullscreen ? (
+                            <Minimize2 className="mr-2 h-4 w-4" />
+                          ) : (
+                            <Maximize2 className="mr-2 h-4 w-4" />
+                          )}
+                          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* User Menu */}
+                  <div className="flex items-center border-l pl-3 ml-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="inline-flex items-center gap-2 rounded-full hover:bg-slate-100 transition-colors p-1"
+                          aria-label="User menu"
+                        >
+                          <Avatar className="h-9 w-9 ring-1 ring-slate-200">
+                            {/* Provide an AvatarImage src if available later */}
+                            <AvatarImage src="" alt="User" />
+                            <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-semibold">
+                              {(user?.username || 'A').slice(0, 1).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuLabel className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                          <div className="text-xs text-slate-500">Signed in as</div>
+                          <div className="text-sm font-semibold text-slate-800 truncate">{user?.username || 'Admin'}</div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={logout} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 focus:bg-red-100 focus:text-red-700">
+                          <LogOut className="mr-2 h-4 w-4" /> Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
               </div>
 
-              {/* Fullscreen Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                className="h-9 w-9 hover:bg-slate-50 hover:text-slate-600 hidden sm:inline-flex"
-              >
-                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
-
-              {/* Mobile: condensed actions menu */}
-              <div className="sm:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem onClick={() => setAiOpen(true)}>
-                      <Bot className="mr-2 h-4 w-4" /> AI Assistant
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleCaptureScreenshot}>
-                      <Camera className="mr-2 h-4 w-4" /> Screenshot
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleRefresh}>
-                      <RefreshCw className="mr-2 h-4 w-4" /> Refresh
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={toggleFullscreen}>
-                      {isFullscreen ? (
-                        <Minimize2 className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Maximize2 className="mr-2 h-4 w-4" />
-                      )}
-                      {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* User Menu */}
-              <div className="flex items-center border-l pl-3 ml-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className="inline-flex items-center gap-2 rounded-full hover:bg-slate-100 transition-colors p-1"
-                      aria-label="User menu"
-                    >
-                      <Avatar className="h-9 w-9 ring-1 ring-slate-200">
-                        {/* Provide an AvatarImage src if available later */}
-                        <AvatarImage src="" alt="User" />
-                        <AvatarFallback className="bg-slate-200 text-slate-700 text-sm font-semibold">
-                          {(user?.username || 'A').slice(0,1).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuLabel className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                      <div className="text-xs text-slate-500">Signed in as</div>
-                      <div className="text-sm font-semibold text-slate-800 truncate">{user?.username || 'Admin'}</div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 focus:bg-red-100 focus:text-red-700">
-                      <LogOut className="mr-2 h-4 w-4" /> Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-
-  </header>
-  )}
-
-        <div className="flex flex-1">
-          {/* Sidebar (extracted) */}
-          {!embed && (
-            <div className="print:hidden">
-              <Sidebar
-                collapsed={sidebarCollapsed}
-                minimized={sidebarMinimized}
-                setCollapsed={setSidebarCollapsed}
-                setMinimized={setSidebarMinimized}
-                isActiveRoute={isActiveRoute}
-                user={user}
-              />
-            </div>
+            </header>
           )}
 
-          {/* Main Content */}
-          <main
-            className={cn(
-              "flex-1 min-h-screen transition-all print:pl-0",
-              embed ? "pl-0" : (sidebarCollapsed ? "pl-0" : sidebarMinimized ? "pl-16" : "pl-52"),
+          <div className="flex flex-1">
+            {/* Sidebar (extracted) */}
+            {!embed && (
+              <div className="print:hidden">
+                <Sidebar
+                  collapsed={sidebarCollapsed}
+                  minimized={sidebarMinimized}
+                  setCollapsed={setSidebarCollapsed}
+                  setMinimized={setSidebarMinimized}
+                  isActiveRoute={isActiveRoute}
+                  user={user}
+                />
+              </div>
             )}
-          >
-            <div
-              ref={contentRef}
+
+            {/* Main Content */}
+            <main
               className={cn(
-                "min-h-full print:p-0",
-                embed ? "p-0" : "px-1 pt-3 pb-4",
+                "flex-1 min-h-screen transition-all print:pl-0",
+                embed ? "pl-0" : (sidebarCollapsed ? "pl-0" : sidebarMinimized ? "pl-16" : "pl-52"),
               )}
             >
-              <Outlet />
-            </div>
-          </main>
-        </div>
+              <div
+                ref={contentRef}
+                className={cn(
+                  "min-h-full print:p-0",
+                  embed ? "p-0" : "px-1 pt-3 pb-4",
+                )}
+              >
+                <Outlet />
+              </div>
+            </main>
+          </div>
 
-        {/* Mobile Sidebar Overlay */}
-        {!embed && !sidebarCollapsed && (
-          <div
-            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-            onClick={() => setSidebarCollapsed(true)}
-          />
-        )}
-      {/* AI Chatbot Modal */}
-      {!embed && <AIChatbotModal open={aiOpen} onOpenChange={setAiOpen} />}
-      </div>
+          {/* Mobile Sidebar Overlay */}
+          {!embed && !sidebarCollapsed && (
+            <div
+              className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+              onClick={() => setSidebarCollapsed(true)}
+            />
+          )}
+          {/* AI Chatbot Modal */}
+          {!embed && <AIChatbotModal open={aiOpen} onOpenChange={setAiOpen} />}
+        </div>
       </HeaderContext.Provider>
     </SidebarContext.Provider>
   );

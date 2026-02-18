@@ -2084,7 +2084,111 @@ def debug_billing_trans_summary_metadata(current_user: User = Depends(get_curren
 
 
 # Lightweight health endpoint to aid PaaS debugging (DB + env checks)
+# Performance Dashboard Endpoints
+
+@app.get("/api/measurements/history", tags=["measurements"])
+def get_measurements_history(client_name: str, account_code: str, retail_code: str, current_user: User = Depends(get_current_user)):
+    """Fetch measurement history for a specific client."""
+    logger.info(f"[MEASUREMENTS_HIST] Client: {client_name}")
+    try:
+        from db import engine
+        from sqlalchemy import text
+        query = text("""
+            SELECT * FROM master_performance 
+            WHERE client_name = :client_name 
+            AND account_code = :account_code 
+            AND retail_code = :retail_code
+            ORDER BY created_at DESC
+        """)
+        with engine.connect() as conn:
+            result = conn.execute(query, {"client_name": client_name, "account_code": account_code, "retail_code": retail_code})
+            rows = [dict(row._mapping) for row in result]
+        return {"success": True, "data": rows}
+    except Exception as e:
+        logger.error(f"[MEASUREMENTS_HIST] Error fetching history: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/measurements/add", tags=["measurements"])
+def add_measurement_record(req: dict = Body(...), current_user: User = Depends(get_current_user)):
+    """Store new body measurements for a client."""
+    logger.info(f"[MEASUREMENTS_ADD] Payload: {req}")
+    try:
+        from db import engine
+        from sqlalchemy import text
+        
+        # Helper to safely parse float or None
+        def safe_float(val):
+            if val is None or (isinstance(val, str) and val.strip() == ""):
+                return None
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
+
+        # Extract and validate basic presence
+        client_name = req.get('client_name')
+        if not client_name:
+            return {"status": "error", "message": "client_name is required"}
+
+        height = safe_float(req.get('height'))
+        weight = safe_float(req.get('weight'))
+        
+        if height is None or weight is None:
+            return {"status": "error", "message": "Height and Weight are required"}
+        
+        if height <= 0 or weight <= 0:
+            return {"status": "error", "message": "Height and Weight must be positive values"}
+
+        # Calculate BMI: Formula: weight (kg) / [height (m)]^2
+        bmi = safe_float(req.get('bmi'))
+        h_m = height / 100
+        calc_bmi = round(weight / (h_m * h_m), 2)
+        if bmi is None or bmi == 0:
+            bmi = calc_bmi
+
+        # Fallbacks for account/retail
+        acc = req.get('account_code') or req.get('accountCode') or getattr(current_user, 'account_code', None)
+        ret = req.get('retail_code') or req.get('retailCode') or getattr(current_user, 'retail_code', None)
+
+        data = {
+            "account_code": acc,
+            "retail_code": ret,
+            "client_name": client_name,
+            "height": height,
+            "weight": weight,
+            "bmi": bmi,
+            "body_fat": safe_float(req.get('body_fat')),
+            "muscle_mass": safe_float(req.get('muscle_mass')),
+            "created_by": req.get('created_by') or current_user.username or "admin",
+            "updated_by": current_user.username or "admin"
+        }
+        
+        logger.info(f"[MEASUREMENTS_ADD] Final data to insert: {data}")
+        
+        query = text("""
+            INSERT INTO master_performance 
+            (account_code, retail_code, client_name, height, weight, bmi, body_fat, muscle_mass, created_by, updated_by)
+            VALUES 
+            (:account_code, :retail_code, :client_name, :height, :weight, :bmi, :body_fat, :muscle_mass, :created_by, :updated_by)
+        """)
+        
+        with engine.begin() as conn:
+            conn.execute(query, data)
+            
+        return {
+            "status": "success", 
+            "success": True, 
+            "message": "Measurement saved successfully",
+            "data": data
+        }
+    except Exception as e:
+        logger.error(f"[MEASUREMENTS_ADD] Failed: {str(e)}", exc_info=True)
+        return {"status": "error", "message": f"Server error: {str(e)}"}
+
+
+
 @app.get("/health")
+
 def health():
     info: Dict[str, Any] = {"status": "ok", "env": {}, "db": "unknown"}
     # Report presence of common environment variables (non-sensitive echo)

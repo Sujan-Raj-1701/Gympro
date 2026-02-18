@@ -80,6 +80,7 @@ import CampaignHistory from "./pages/marketing/CampaignHistory";
 import Enquiry from "./pages/Enquiry";
 import EnquiryPrint from "./pages/Enquiry/EnquiryPrint";
 import { Settlement } from "./pages/settlement";
+import ClientPerformance from "./pages/client-performance";
 
 
 
@@ -162,31 +163,31 @@ const App = () => (
               {/* Legacy path redirect */}
               <Route path="hall-booking" element={<Navigate to="/appointments" replace />} />
               {/* Outdoor Booking */}
-              <Route 
-                path="outdoor-booking" 
+              <Route
+                path="outdoor-booking"
                 element={
                   <ProtectedRoute>
                     <OutdoorBooking />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="create-booking" 
+              <Route
+                path="create-booking"
                 element={
                   <ProtectedRoute>
                     <CreateBooking />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="invoice/:bookingId" 
+              <Route
+                path="invoice/:bookingId"
                 element={
                   <ProtectedRoute>
                     <InvoicePrint />
                   </ProtectedRoute>
-                } 
+                }
               />
-              
+
               {/* User Management */}
               <Route
                 path="user-management"
@@ -359,7 +360,7 @@ const App = () => (
                 }
               />
 
-  
+
 
               {/* Reports - Main reports page and individual reports */}
               <Route
@@ -689,6 +690,16 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Settlement />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Client Performance */}
+              <Route
+                path="client-performance/*"
+                element={
+                  <ProtectedRoute>
+                    <ClientPerformance />
                   </ProtectedRoute>
                 }
               />
